@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="header">
+    <h1>Система управления задачами</h1>
+    <div class="user-info">
+        <a th:href="@{/dashboard}">На главную</a>
+        <a th:href="@{/logout}">Выйти</a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="error-container">
+        <h1>⚠️ Ошибка</h1>
+        <p>Произошла непредвиденная ошибка.</p>
+
+        <div th:if="${error != null}">
+            <p><strong>Детали:</strong> <span th:text="${error}"></span></p>
+        </div>
+
+        <div th:if="${message != null}">
+            <p><strong>Сообщение:</strong> <span th:text="${message}"></span></p>
+        </div>
+
+        <div th:if="${status != null}">
+            <p><strong>Код ошибки:</strong> <span th:text="${status}"></span></p>
+        </div>
+
+        <div class="actions">
+            <a th:href="@{/dashboard}" class="btn btn-primary">Вернуться на главную</a>
+            <a th:href="@{/tasks}" class="btn btn-secondary">К задачам</a>
+            <button onclick="history.back()" class="btn btn-secondary">Назад</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>

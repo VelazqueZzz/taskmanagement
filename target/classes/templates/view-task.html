@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Просмотр задачи</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="header">
+    <h1>Просмотр задачи</h1>
+    <div class="user-info">
+        Пользователь: <span sec:authentication="name"></span>
+        <a th:href="@{/tasks}">К списку задач</a>
+        <a th:href="@{/dashboard}">На главную</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Выйти</button>
+        </form>
+    </div>
+</div>
+
+<div class="navigation">
+    <a th:href="@{/tasks/create}" sec:authorize="hasRole('ADMIN')">➕ Создать задачу</a>
+    <a th:href="@{/tasks}">📋 Активные задачи</a>
+    <a th:href="@{/archive}">📁 Архив задач</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')">👥 Пользователи</a>
+    <a th:href="@{/dashboard}">🏠 Главная</a>
+</div>
+
+<div class="content">
+    <div class="task-details">
+        <h2>Задача #<span th:text="${task.id}"></span></h2>
+
+        <!-- Сообщения об ошибках -->
+        <div th:if="${param.error}" class="alert alert-error">
+            <span th:if="${param.error == 'access_denied'}">Доступ запрещен!</span>
+        </div>
+
+        <div class="task-detail-card">
+            <div class="task-header">
+                <h3 th:text="${task.title}"></h3>
+                <div class="task-meta">
+                        <span th:classappend="${'status-' + task.status.toString().toLowerCase()}">
+                            <span th:if="${task.status.toString() == 'PENDING'}">⏳ Ожидание</span>
+                            <span th:if="${task.status.toString() == 'IN_PROGRESS'}">🚧 В процессе</span>
+                            <span th:if="${task.status.toString() == 'COMPLETED'}">✅ Завершено</span>
+                            <span th:if="${task.status.toString() == 'CANCELLED'}">❌ Отменено</span>
+                        </span>
+                    <span th:classappend="${'priority-' + task.priority.toString().toLowerCase()}">
+                            <span th:if="${task.priority.toString() == 'LOW'}">⬇️ Низкий</span>
+                            <span th:if="${task.priority.toString() == 'MEDIUM'}">↔️ Средний</span>
+                            <span th:if="${task.priority.toString() == 'HIGH'}">⬆️ Высокий</span>
+                            <span th:if="${task.priority.toString() == 'URGENT'}">🔥 Срочный</span>
+                        </span>
+                </div>
+            </div>
+
+            <div class="task-content">
+                <div class="task-section">
+                    <h4>📝 Описание</h4>
+                    <p th:if="${task.description}" th:text="${task.description}"></p>
+                    <p th:unless="${task.description}" class="text-muted">Описание отсутствует</p>
+                </div>
+
+                <div class="task-info-grid">
+                    <div class="info-item">
+                        <span class="info-label">👤 Исполнитель:</span>
+                        <span class="info-value" th:text="${task.assignedUser != null ? task.assignedUser.username : 'Не назначен'}"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">📅 Создана:</span>
+                        <span class="info-value" th:text="${task.createdAt}"></span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">⏰ Срок выполнения:</span>
+                        <span class="info-value" th:text="${task.dueDate} ?: 'Не указан'"></span>
+                        <span th:if="${task.dueDate != null and task.dueDate.isBefore(T(java.time.LocalDate).now()) and task.status.toString() != 'COMPLETED'}"
+                              class="text-danger">⚠️ Просрочена</span>
+                    </div>
+
+                    <div class="info-item">
+                        <span class="info-label">🏷️ ID:</span>
+                        <span class="info-value" th:text="${task.id}"></span>
+                    </div>
+
+                    <div class="info-item" th:if="${task.archived}">
+                        <span class="info-label">📁 Архив:</span>
+                        <span class="info-value">✅ В архиве с <span th:text="${task.archivedDate}"></span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-actions">
+                <a th:href="@{/tasks}" class="btn btn-secondary">← Назад к списку</a>
+                <a th:href="@{'/tasks/update/' + ${task.id}}" class="btn btn-primary">✏️ Редактировать</a>
+
+                <form th:action="@{'/tasks/complete/' + ${task.id}}" method="post" style="display:inline;"
+                      th:if="${task.status.toString() != 'COMPLETED'}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-success">✅ Завершить</button>
+                </form>
+
+                <form th:action="@{'/archive/archive/' + ${task.id}}" method="post" style="display:inline;"
+                      th:if="${task.status.toString() == 'COMPLETED' and not task.archived}">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-warning">📁 В архив</button>
+                </form>
+
+                <form th:action="@{'/tasks/delete/' + ${task.id}}" method="post" style="display:inline;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить задачу?')">🗑️ Удалить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

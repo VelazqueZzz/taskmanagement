@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель управления</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="header">
+    <h1>Панель управления задачами</h1>
+    <div class="user-info">
+        Пользователь: <span sec:authentication="name"></span>
+        (<span sec:authentication="principal.authorities"></span>)
+        <a th:href="@{/dashboard}">На главную</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Выйти</button>
+        </form>
+    </div>
+</div>
+
+<div class="navigation">
+    <a th:href="@{/tasks/create}" sec:authorize="hasRole('ADMIN')">➕ Создать задачу</a>
+    <a th:href="@{/tasks}">📋 Активные задачи</a>
+    <a th:href="@{/archive}">📁 Архив задач</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')">👥 Пользователи</a>
+    <a th:href="@{/dashboard}">🏠 Главная</a>
+</div>
+
+<div class="content">
+    <h2>Добро пожаловать, <span th:text="${currentUser.fullName} ?: ${currentUser.username}"></span>!</h2>
+
+    <div class="stats-cards">
+        <div class="stat-card">
+            <h4>📋 Активных задач</h4>
+            <p class="stat-number" th:text="${totalActiveTasks} ?: '0'"></p>
+        </div>
+        <div class="stat-card" th:if="${totalArchivedTasks != null}">
+            <h4>📁 Архивных задач</h4>
+            <p class="stat-number" th:text="${totalArchivedTasks}"></p>
+        </div>
+    </div>
+
+    <div sec:authorize="hasRole('ADMIN')">
+        <h3>Административная панель</h3>
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h4>👥 Пользователей</h4>
+                <p class="stat-number" th:text="${totalUsers} ?: '0'"></p>
+            </div>
+            <div class="stat-card">
+                <h4>📋 Всего задач</h4>
+                <p class="stat-number" th:text="${totalTasks} ?: '0'"></p>
+            </div>
+        </div>
+        <div class="admin-actions">
+            <a th:href="@{/admin/users}" class="btn btn-primary">Управление пользователями</a>
+            <a th:href="@{/tasks/create}" class="btn btn-primary">Создать задачу</a>
+            <a th:href="@{/archive}" class="btn btn-secondary">Просмотреть архив</a>
+        </div>
+    </div>
+
+    <div sec:authorize="hasRole('USER')">
+        <h3>Ваши задачи</h3>
+        <div class="stats-cards">
+            <div class="stat-card">
+                <h4>📋 Всего задач</h4>
+                <p class="stat-number" th:text="${#lists.size(userTasks)} ?: '0'"></p>
+            </div>
+            <div class="stat-card">
+                <h4>✅ Завершено</h4>
+                <p class="stat-number" th:text="${completedTasks} ?: '0'"></p>
+            </div>
+            <div class="stat-card">
+                <h4>⏳ Ожидают</h4>
+                <p class="stat-number" th:text="${pendingTasks} ?: '0'"></p>
+            </div>
+        </div>
+        <div class="user-actions">
+            <a th:href="@{/tasks}" class="btn btn-primary">Посмотреть мои задачи</a>
+            <a th:href="@{/archive}" class="btn btn-secondary">Мой архив</a>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
