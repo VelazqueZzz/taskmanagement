@@ -1,17 +1,25 @@
-Не большой проект распределения задач в отделе или компании. Стэк HTML+CSS+SpringBoot+MySql
+Не большой проект распределения задач в отделе или компании. 
+
+Стэк HTML+CSS+SpringBoot+MySql
+
 незабудьте в application.properties выставить свои настройки
+
 Скрипт для создания базы и таблиц:
 
 
 -- Создание базы данных	
 
 CREATE DATABASE IF NOT EXISTS task_management_db 
+
 CHARACTER SET utf8mb4 
+
 COLLATE utf8mb4_unicode_ci;
+
 
 USE task_management_db;
 
 -- Таблица пользователей
+
 
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
