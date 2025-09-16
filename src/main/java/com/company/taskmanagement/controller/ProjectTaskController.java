@@ -250,7 +250,6 @@ public class ProjectTaskController {
             return "redirect:/tasks?error=load";
         }
     }
-
     /**
      * Вспомогательный метод для получения сообщений об успехе
      */
