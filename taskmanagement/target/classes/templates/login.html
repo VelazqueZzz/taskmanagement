@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6366f1">
+    <title>Вход</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="content" style="max-width: 400px; margin: 100px auto;">
+    <div class="card" data-animate style="opacity: 0; transform: translateY(20px); transition: all 0.5s ease;">
+        <div class="card-header" style="border: none; text-align: center;">
+            <h1 style="font-size: 2rem; margin: 0;">📋</h1>
+            <p style="color: var(--gray); margin: 0.5rem 0 0 0;">Система управления задачами</p>
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="form-group">
+                <label for="username">👤 Логин</label>
+                <input type="text" id="username" name="username" required
+                       placeholder="Введите ваш логин" autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">🔒 Пароль</label>
+                <input type="password" id="password" name="password" required
+                       placeholder="Введите ваш пароль" autocomplete="current-password">
+            </div>
+
+            <div class="form-actions" style="justify-content: center;">
+                <button type="submit" class="btn btn-primary" style="min-width: 120px;">
+                    🚀 Войти
+                </button>
+            </div>
+        </form>
+
+        <div th:if="${param.error}" class="alert alert-error" style="margin-top: 1rem;">
+            ❌ Неверный логин или пароль
+        </div>
+        <div th:if="${param.logout}" class="alert alert-success" style="margin-top: 1rem;">
+            ✅ Вы успешно вышли из системы
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--gray-light);">
+            <h3 style="font-size: 1rem; margin-bottom: 1rem; color: var(--gray);">Тестовые аккаунты:</h3>
+            <div style="display: grid; gap: 0.5rem; font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>👑 Администратор:</span>
+                    <code>admin / admin123</code>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>👤 Пользователь 1:</span>
+                    <code>user1 / user123</code>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span>👤 Пользователь 2:</span>
+                    <code>user2 / password</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const card = document.querySelector('[data-animate]');
+        setTimeout(() => {
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+        }, 100);
+    });
+</script>
+</body>
+</html>

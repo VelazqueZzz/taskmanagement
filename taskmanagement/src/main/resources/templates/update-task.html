@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование задачи</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6366f1">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+    <script th:src="@{/js/animations.js}" defer></script>
+</head>
+<body>
+<div class="header">
+    <h1>Редактирование задачи</h1>
+    <div class="user-info">
+        Пользователь: <span sec:authentication="name"></span>
+        <a th:href="@{'/tasks/view/' + ${task.id}}">👁️ Просмотр</a>
+        <a th:href="@{/tasks}">Назад к задачам</a>
+        <a th:href="@{/dashboard}">На главную</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="logout-btn">Выйти</button>
+        </form>
+    </div>
+</div>
+
+<div class="navigation">
+    <a th:href="@{/tasks/create}" sec:authorize="hasRole('ADMIN')">➕ Создать задачу</a>
+    <a th:href="@{/tasks}">📋 Активные задачи</a>
+    <a th:href="@{/archive}">📁 Архив задач</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')">👥 Пользователи</a>
+    <a th:href="@{/dashboard}">🏠 Главная</a>
+</div>
+
+<div class="content">
+    <div class="form-container">
+        <h2>Редактировать задачу #<span th:text="${task.id}"></span></h2>
+
+        <!-- Сообщения об ошибках -->
+        <div th:if="${param.error}" class="alert alert-error">
+            <span th:if="${param.error == 'update'}">Ошибка обновления задачи!</span>
+        </div>
+
+        <form th:action="@{'/tasks/update/' + ${task.id}}" method="post">
+            <div class="form-group">
+                <label>Название:*</label>
+                <input type="text" name="title" th:value="${task.title}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Описание:</label>
+                <textarea name="description" th:text="${task.description}"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Статус:*</label>
+                    <select name="status">
+                        <option th:each="status : ${T(com.company.taskmanagement.model.ProjectTask$TaskStatus).values()}"
+                                th:value="${status}"
+                                th:text="${status.displayName}"
+                                th:selected="${status == task.status}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Приоритет:*</label>
+                    <select name="priority">
+                        <option th:each="priority : ${T(com.company.taskmanagement.model.ProjectTask$TaskPriority).values()}"
+                                th:value="${priority}"
+                                th:text="${priority.displayName}"
+                                th:selected="${priority == task.priority}">
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Срок выполнения:</label>
+                <input type="date" name="dueDate" th:value="${task.dueDate}">
+            </div>
+
+            <div class="form-group">
+                <label>Исполнитель:*</label>
+                <select name="userId">
+                    <option th:each="user : ${users}"
+                            th:value="${user.id}"
+                            th:text="${user.username}"
+                            th:selected="${user.id == task.assignedUser.id}">
+                    </option>
+                </select>
+            </div>
+
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                <a th:href="@{'/tasks/view/' + ${task.id}}" class="btn btn-secondary">👁️ Просмотр</a>
+                <a th:href="@{/tasks}" class="btn btn-secondary">Отмена</a>
+            </div>
+        </form>
+
+        <!-- Дополнительная информация -->
+        <div class="task-info-update">
+            <h4>Дополнительная информация:</h4>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">ID задачи:</span>
+                    <span class="info-value" th:text="${task.id}"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Создана:</span>
+                    <span class="info-value" th:text="${task.createdAt}"></span>
+                </div>
+                <div class="info-item" th:if="${task.archived}">
+                    <span class="info-label">В архиве с:</span>
+                    <span class="info-value" th:text="${task.archivedDate}"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
