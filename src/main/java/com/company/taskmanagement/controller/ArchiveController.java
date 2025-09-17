@@ -101,7 +101,7 @@ public class ArchiveController {
     @PostMapping("/delete/{id}")
     public String deleteArchivedTask(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            // Здесь можно добавить дополнительную логику удаления
+            archiveService.deleteArchivedTask(id);
             redirectAttributes.addAttribute("success", "deleted");
             return "redirect:/archive";
         } catch (Exception e) {

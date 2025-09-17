@@ -61,6 +61,13 @@ public class ArchiveService {
             }
         }
     }
+    @Transactional
+    public void deleteArchivedTask(Long taskId) {
+        ProjectTask task = projectTaskService.getTaskById(taskId).orElse(null);
+        if (task != null && task.isArchived()) {
+            projectTaskRepository.delete(task);
+        }
+    }
 
     /**
      * Получить все архивные задачи
