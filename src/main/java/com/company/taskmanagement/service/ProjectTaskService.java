@@ -8,12 +8,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class ProjectTaskService {
 
     @Autowired
     private ProjectTaskRepository projectTaskRepository;
+
+    @Autowired
+    private UserService userService;
 
     // Существующие методы
     public List<ProjectTask> getAllTasks() {
@@ -25,7 +29,7 @@ public class ProjectTaskService {
     }
 
     public List<ProjectTask> getTasksByUser(User user) {
-        return projectTaskRepository.findByAssignedUser(user);
+        return projectTaskRepository.findByAssigneeId(user.getId());
     }
 
     public ProjectTask createTask(ProjectTask task) {
@@ -39,7 +43,7 @@ public class ProjectTaskService {
             task.setStatus(taskDetails.getStatus());
             task.setPriority(taskDetails.getPriority());
             task.setDueDate(taskDetails.getDueDate());
-            task.setAssignedUser(taskDetails.getAssignedUser());
+            task.setAssignees(taskDetails.getAssignees());
             task.setArchived(taskDetails.isArchived());
             task.setArchivedDate(taskDetails.getArchivedDate());
             return projectTaskRepository.save(task);
@@ -52,5 +56,30 @@ public class ProjectTaskService {
             return true;
         }
         return false;
+    }
+
+    // Новые методы для работы с множественными исполнителями
+    public ProjectTask assignUsersToTask(Long taskId, Set<Long> userIds) {
+        ProjectTask task = getTaskById(taskId).orElse(null);
+        if (task != null) {
+            Set<User> users = userService.getUsersByIds(userIds);
+            task.setAssignees(users);
+            return projectTaskRepository.save(task);
+        }
+        return null;
+    }
+
+    public ProjectTask removeUserFromTask(Long taskId, Long userId) {
+        ProjectTask task = getTaskById(taskId).orElse(null);
+        if (task != null) {
+            task.getAssignees().removeIf(user -> user.getId().equals(userId));
+            return projectTaskRepository.save(task);
+        }
+        return null;
+    }
+
+    public Set<User> getTaskAssignees(Long taskId) {
+        ProjectTask task = getTaskById(taskId).orElse(null);
+        return task != null ? task.getAssignees() : null;
     }
 }

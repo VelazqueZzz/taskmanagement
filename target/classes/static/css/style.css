@@ -499,3 +499,66 @@ body {
         background: #374151;
     }
 }
+/* Стили для множественных исполнителей */
+.assignees-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.assignee-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--gray-light);
+    border-radius: var(--border-radius);
+}
+
+.assignee-name {
+    font-weight: 600;
+}
+
+.assignee-email {
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+.assignees-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.assignee-badge {
+    background: var(--primary);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Стили для multiple select */
+select[multiple] {
+    min-height: 120px;
+    padding: 0.5rem;
+}
+
+select[multiple] option {
+    padding: 0.5rem;
+    margin: 0.1rem 0;
+    border-radius: 4px;
+}
+
+select[multiple] option:checked {
+    background: var(--primary);
+    color: white;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--gray);
+}

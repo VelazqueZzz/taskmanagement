@@ -101,8 +101,12 @@ public class ArchiveController {
     @PostMapping("/delete/{id}")
     public String deleteArchivedTask(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            archiveService.deleteArchivedTask(id);
-            redirectAttributes.addAttribute("success", "deleted");
+            boolean deleted = archiveService.deleteArchivedTask(id);
+            if (deleted) {
+                redirectAttributes.addAttribute("success", "deleted");
+            } else {
+                redirectAttributes.addAttribute("error", "not_found");
+            }
             return "redirect:/archive";
         } catch (Exception e) {
             redirectAttributes.addAttribute("error", "delete");
@@ -124,6 +128,7 @@ public class ArchiveController {
             case "archive": return "Ошибка архивирования задачи!";
             case "unarchive": return "Ошибка восстановления задачи!";
             case "delete": return "Ошибка удаления задачи!";
+            case "not_found": return "Задача не найдена или не в архиве!";
             default: return "Произошла ошибка!";
         }
     }

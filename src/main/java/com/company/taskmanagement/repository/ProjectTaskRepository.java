@@ -11,24 +11,30 @@ import java.util.List;
 
 public interface ProjectTaskRepository extends JpaRepository<ProjectTask, Long> {
 
-    // Основные методы
-    List<ProjectTask> findByAssignedUser(User user);
+    // Методы для поиска задач по исполнителям
+    @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId")
+    List<ProjectTask> findByAssigneeId(@Param("userId") Long userId);
+
+    @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.archived = true")
+    List<ProjectTask> findByAssigneeIdAndArchivedTrue(@Param("userId") Long userId);
+
+    @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.archived = false")
+    List<ProjectTask> findByAssigneeIdAndArchivedFalse(@Param("userId") Long userId);
+
+    // Остальные методы остаются без изменений
     List<ProjectTask> findByStatus(String status);
     List<ProjectTask> findByPriority(String priority);
 
-    // Методы для архива - используем правильное имя поля 'archived'
+    // Методы для архива
     List<ProjectTask> findByArchivedTrue();
     List<ProjectTask> findByArchivedFalse();
 
     // Методы с @Query для полного контроля
-    @Query("SELECT t FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.archived = true")
-    List<ProjectTask> findByAssignedUserIdAndArchivedTrue(@Param("userId") Long userId);
+    @Query("SELECT t FROM ProjectTask t WHERE t.archived = true")
+    List<ProjectTask> findByArchivedTrueWithQuery();
 
-    @Query("SELECT t FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.archived = false")
-    List<ProjectTask> findByAssignedUserIdAndArchivedFalse(@Param("userId") Long userId);
-
-    @Query("SELECT t FROM ProjectTask t WHERE t.assignedUser.id = :userId")
-    List<ProjectTask> findByAssignedUserId(@Param("userId") Long userId);
+    @Query("SELECT t FROM ProjectTask t WHERE t.archived = false")
+    List<ProjectTask> findByArchivedFalseWithQuery();
 
     @Query("SELECT t FROM ProjectTask t WHERE t.status = :status AND t.archived = false")
     List<ProjectTask> findByStatusAndArchivedFalse(@Param("status") String status);
@@ -43,18 +49,18 @@ public interface ProjectTaskRepository extends JpaRepository<ProjectTask, Long> 
     @Query("SELECT COUNT(t) FROM ProjectTask t WHERE t.archived = false")
     Long countActiveTasks();
 
-    @Query("SELECT COUNT(t) FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.archived = true")
+    @Query("SELECT COUNT(t) FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.archived = true")
     Long countArchivedTasksByUserId(@Param("userId") Long userId);
 
-    @Query("SELECT COUNT(t) FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.archived = false")
+    @Query("SELECT COUNT(t) FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.archived = false")
     Long countActiveTasksByUserId(@Param("userId") Long userId);
 
     // Дополнительные полезные методы
-    @Query("SELECT t FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.status = :status AND t.archived = false")
-    List<ProjectTask> findByAssignedUserIdAndStatusAndArchivedFalse(@Param("userId") Long userId, @Param("status") String status);
+    @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.status = :status AND t.archived = false")
+    List<ProjectTask> findByAssigneeIdAndStatusAndArchivedFalse(@Param("userId") Long userId, @Param("status") String status);
 
-    @Query("SELECT t FROM ProjectTask t WHERE t.assignedUser.id = :userId AND t.status = :status AND t.archived = true")
-    List<ProjectTask> findByAssignedUserIdAndStatusAndArchivedTrue(@Param("userId") Long userId, @Param("status") String status);
+    @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.status = :status AND t.archived = true")
+    List<ProjectTask> findByAssigneeIdAndStatusAndArchivedTrue(@Param("userId") Long userId, @Param("status") String status);
 
     // Методы для поиска по датам
     @Query("SELECT t FROM ProjectTask t WHERE t.archived = true AND t.archivedDate < :date")

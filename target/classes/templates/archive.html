@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#6366f1">
     <title>Архив задач - TaskFlow Pro</title>
     <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
 </head>
 <body>
 <div class="header">
@@ -58,7 +59,7 @@
                     <th>Приоритет</th>
                     <th>Срок выполнения</th>
                     <th>Дата архивации</th>
-                    <th>Исполнитель</th>
+                    <th>Исполнители</th>
                     <th>Действия</th>
                 </tr>
                 </thead>
@@ -93,16 +94,23 @@
                     <td>
                         <span th:if="${task?.dueDate != null}"
                               th:text="${#temporals.format(task.dueDate, 'dd.MM.yyyy')}"></span>
-                        <span th:unless="${task?.dueDate != null}">Не указан</span>
+                        <span th:unless="${task?.dueDate != null}" class="text-muted">Не указан</span>
                     </td>
 
                     <td>
                         <span th:if="${task?.archivedDate != null}"
                               th:text="${#temporals.format(task.archivedDate, 'dd.MM.yyyy')}"></span>
-                        <span th:unless="${task?.archivedDate != null}">Не указана</span>
+                        <span th:unless="${task?.archivedDate != null}" class="text-muted">Не указана</span>
                     </td>
 
-                    <td th:text="${task?.assignedUser?.username} ?: 'Не назначен'"></td>
+                    <td>
+                        <div class="assignees-preview">
+                            <span th:if="${task?.assignees?.empty}" class="text-muted">Не назначены</span>
+                            <div th:each="user : ${task?.assignees}" class="assignee-badge">
+                                <span th:text="${user?.username} ?: 'Неизвестный'"></span>
+                            </div>
+                        </div>
+                    </td>
 
                     <td>
                         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -176,6 +184,26 @@
         white-space: nowrap;
     }
 
+    .assignees-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .assignee-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .text-muted {
+        color: var(--gray);
+        font-style: italic;
+    }
+
     .empty-state {
         text-align: center;
         padding: 3rem;
@@ -186,6 +214,18 @@
         .archive-stats {
             flex-direction: column;
             align-items: flex-start;
+        }
+
+        .assignees-preview {
+            flex-direction: column;
+        }
+
+        .table {
+            font-size: 0.8rem;
+        }
+
+        .table td {
+            padding: 0.5rem;
         }
     }
 </style>
@@ -209,6 +249,15 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         console.log('Archive page loaded');
+
+        // Плавное появление строк архива
+        const rows = document.querySelectorAll('.archived-row');
+        rows.forEach((row, index) => {
+            setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
     });
 </script>
 </body>

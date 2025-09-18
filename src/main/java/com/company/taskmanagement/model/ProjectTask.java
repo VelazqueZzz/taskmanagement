@@ -2,6 +2,8 @@ package com.company.taskmanagement.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "tasks")
@@ -83,9 +85,14 @@ public class ProjectTask {
     @Column(name = "archived_date")
     private LocalDate archivedDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User assignedUser;
+    // Множество исполнителей
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "task_assignees",
+            joinColumns = @JoinColumn(name = "task_id"),
+            inverseJoinColumns = @JoinColumn(name = "user_id")
+    )
+    private Set<User> assignees = new HashSet<>();
 
     // Конструкторы
     public ProjectTask() {
@@ -96,13 +103,13 @@ public class ProjectTask {
     }
 
     public ProjectTask(String title, String description, TaskStatus status,
-                       TaskPriority priority, LocalDate dueDate, User assignedUser) {
+                       TaskPriority priority, LocalDate dueDate, Set<User> assignees) {
         this.title = title;
         this.description = description;
         this.status = status;
         this.priority = priority;
         this.dueDate = dueDate;
-        this.assignedUser = assignedUser;
+        this.assignees = assignees;
         this.createdAt = LocalDate.now();
         this.archived = false;
     }
@@ -191,12 +198,12 @@ public class ProjectTask {
         this.archivedDate = archivedDate;
     }
 
-    public User getAssignedUser() {
-        return assignedUser;
+    public Set<User> getAssignees() {
+        return assignees;
     }
 
-    public void setAssignedUser(User assignedUser) {
-        this.assignedUser = assignedUser;
+    public void setAssignees(Set<User> assignees) {
+        this.assignees = assignees;
     }
 
     // Вспомогательные методы
@@ -264,7 +271,7 @@ public class ProjectTask {
                 ", dueDate=" + dueDate +
                 ", archived=" + archived +
                 ", archivedDate=" + archivedDate +
-                ", assignedUser=" + (assignedUser != null ? assignedUser.getUsername() : "null") +
+                ", assignees=" + (assignees != null ? assignees.size() + " users" : "null") +
                 '}';
     }
 

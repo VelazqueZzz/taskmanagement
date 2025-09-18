@@ -77,9 +77,14 @@
 
             <div class="info-grid">
                 <div class="info-item">
-                    <span class="info-label">👤 Исполнитель:</span>
-                    <span class="info-value"
-                          th:text="${task?.assignedUser?.username} ?: 'Не назначен'"></span>
+                    <span class="info-label">👥 Исполнители:</span>
+                    <div class="assignees-list">
+                        <span th:if="${task?.assignees?.empty}" class="text-muted">Не назначены</span>
+                        <div th:each="user : ${task?.assignees}" class="assignee-item">
+                            <span class="assignee-name" th:text="${user.username}"></span>
+                            <span class="assignee-email" th:text="'(' + ${user.email} + ')'"></span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="info-item">
@@ -182,6 +187,30 @@
         font-size: 1.1rem;
         color: var(--dark);
         font-weight: 500;
+    }
+
+    .assignees-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .assignee-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem;
+        background: var(--gray-light);
+        border-radius: var(--border-radius);
+    }
+
+    .assignee-name {
+        font-weight: 600;
+    }
+
+    .assignee-email {
+        font-size: 0.8rem;
+        color: var(--gray);
     }
 
     .text-muted {

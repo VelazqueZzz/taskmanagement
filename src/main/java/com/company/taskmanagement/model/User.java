@@ -1,7 +1,8 @@
 package com.company.taskmanagement.model;
 
 import jakarta.persistence.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -24,8 +25,9 @@ public class User {
 
     private String fullName;
 
-    @OneToMany(mappedBy = "assignedUser", cascade = CascadeType.ALL)
-    private List<ProjectTask> tasks; // Изменено на ProjectTask
+    // Обновляем связь с tasks - теперь многие ко многим
+    @ManyToMany(mappedBy = "assignees", fetch = FetchType.LAZY)
+    private Set<ProjectTask> tasks = new HashSet<>();
 
     // Constructors
     public User() {}
@@ -57,6 +59,6 @@ public class User {
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
 
-    public List<ProjectTask> getTasks() { return tasks; } // Изменено на ProjectTask
-    public void setTasks(List<ProjectTask> tasks) { this.tasks = tasks; } // Изменено на ProjectTask
+    public Set<ProjectTask> getTasks() { return tasks; }
+    public void setTasks(Set<ProjectTask> tasks) { this.tasks = tasks; }
 }

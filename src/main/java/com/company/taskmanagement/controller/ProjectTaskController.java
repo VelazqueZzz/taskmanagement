@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/tasks")
@@ -52,13 +54,13 @@ public class ProjectTaskController {
                              @RequestParam String status,
                              @RequestParam String priority,
                              @RequestParam(required = false) String dueDate,
-                             @RequestParam Long userId,
+                             @RequestParam Set<Long> userIds,  // Изменено на Set
                              RedirectAttributes redirectAttributes) {
 
         try {
-            User user = userService.getUserById(userId).orElse(null);
-            if (user == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Пользователь не найден!");
+            Set<User> users = userService.getUsersByIds(userIds);
+            if (users.isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Необходимо выбрать хотя бы одного исполнителя!");
                 return "redirect:/tasks/create";
             }
 
@@ -72,7 +74,7 @@ public class ProjectTaskController {
                 task.setDueDate(LocalDate.parse(dueDate));
             }
 
-            task.setAssignedUser(user);
+            task.setAssignees(users);
             projectTaskService.createTask(task);
 
             redirectAttributes.addFlashAttribute("successMessage", "Задача успешно создана!");
@@ -156,17 +158,22 @@ public class ProjectTaskController {
                              @RequestParam String status,
                              @RequestParam String priority,
                              @RequestParam(required = false) String dueDate,
-                             @RequestParam Long userId) {
+                             @RequestParam Set<Long> userIds) {  // Изменено на Set
 
         try {
-            User user = userService.getUserById(userId).orElse(null);
+            Set<User> users = userService.getUsersByIds(userIds);
+            if (users.isEmpty()) {
+                return "redirect:/tasks/update/" + id + "?error=no_assignees";
+            }
+
             ProjectTask existingTask = projectTaskService.getTaskById(id).orElse(null);
 
-            if (existingTask != null && user != null) {
+            if (existingTask != null) {
                 existingTask.setTitle(title);
                 existingTask.setDescription(description);
                 existingTask.setStatus(ProjectTask.TaskStatus.valueOf(status));
                 existingTask.setPriority(ProjectTask.TaskPriority.valueOf(priority));
+                existingTask.setAssignees(users);
 
                 if (dueDate != null && !dueDate.isEmpty()) {
                     existingTask.setDueDate(LocalDate.parse(dueDate));
@@ -174,7 +181,6 @@ public class ProjectTaskController {
                     existingTask.setDueDate(null);
                 }
 
-                existingTask.setAssignedUser(user);
                 projectTaskService.updateTask(id, existingTask);
             }
             return "redirect:/tasks?success=updated";
@@ -221,6 +227,7 @@ public class ProjectTaskController {
             return "redirect:/tasks?error=complete";
         }
     }
+
     @GetMapping("/view/{id}")
     public String viewTask(@PathVariable Long id, Model model) {
         try {
@@ -229,7 +236,7 @@ public class ProjectTaskController {
                 return "redirect:/tasks?error=not_found";
             }
 
-            // Проверяем права доступа
+            // Простая проверка прав
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String username = auth.getName();
             User currentUser = userService.getUserByUsername(username).orElse(null);
@@ -238,18 +245,24 @@ public class ProjectTaskController {
                 return "redirect:/login";
             }
 
-            // Проверяем, что пользователь имеет доступ к задаче
-            if (currentUser.getRole().equals("USER") &&
-                    !task.getAssignedUser().getId().equals(currentUser.getId())) {
-                return "redirect:/tasks?error=access_denied";
+            // Для пользователей проверяем, что задача назначена на них
+            if (currentUser.getRole().equals("USER")) {
+                boolean hasAccess = task.getAssignees().stream()
+                        .anyMatch(user -> user.getId().equals(currentUser.getId()));
+
+                if (!hasAccess) {
+                    return "redirect:/tasks?error=access_denied";
+                }
             }
 
             model.addAttribute("task", task);
             return "view-task";
+
         } catch (Exception e) {
             return "redirect:/tasks?error=load";
         }
     }
+
     /**
      * Вспомогательный метод для получения сообщений об успехе
      */
@@ -274,6 +287,8 @@ public class ProjectTaskController {
             case "delete": return "Ошибка удаления задачи!";
             case "complete": return "Ошибка завершения задачи!";
             case "create": return "Ошибка создания задачи!";
+            case "no_assignees": return "Необходимо выбрать хотя бы одного исполнителя!";
+            case "access_denied": return "Доступ запрещен!";
             default: return "Произошла ошибка!";
         }
     }

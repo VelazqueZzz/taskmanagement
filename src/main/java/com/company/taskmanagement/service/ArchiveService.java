@@ -44,6 +44,24 @@ public class ArchiveService {
     }
 
     /**
+     * Удалить архивную задачу
+     */
+    @Transactional
+    public boolean deleteArchivedTask(Long taskId) {
+        try {
+            ProjectTask task = projectTaskService.getTaskById(taskId).orElse(null);
+            if (task != null && task.isArchived()) {
+                projectTaskRepository.delete(task);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            System.out.println("Error deleting archived task: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Автоматическое архивирование завершенных задач через 30 дней
      */
     @Scheduled(cron = "0 0 2 * * ?") // Каждый день в 2:00
@@ -61,13 +79,6 @@ public class ArchiveService {
             }
         }
     }
-    @Transactional
-    public void deleteArchivedTask(Long taskId) {
-        ProjectTask task = projectTaskService.getTaskById(taskId).orElse(null);
-        if (task != null && task.isArchived()) {
-            projectTaskRepository.delete(task);
-        }
-    }
 
     /**
      * Получить все архивные задачи
@@ -80,14 +91,14 @@ public class ArchiveService {
      * Получить архивные задачи пользователя
      */
     public List<ProjectTask> getUserArchivedTasks(Long userId) {
-        return projectTaskRepository.findByAssignedUserIdAndArchivedTrue(userId);
+        return projectTaskRepository.findByAssigneeIdAndArchivedTrue(userId);
     }
 
     /**
      * Получить активные задачи пользователя
      */
     public List<ProjectTask> getUserActiveTasks(Long userId) {
-        return projectTaskRepository.findByAssignedUserIdAndArchivedFalse(userId);
+        return projectTaskRepository.findByAssigneeIdAndArchivedFalse(userId);
     }
 
     /**
@@ -101,7 +112,7 @@ public class ArchiveService {
      * Получить задачи пользователя
      */
     public List<ProjectTask> getTasksByUserId(Long userId) {
-        return projectTaskRepository.findByAssignedUserId(userId);
+        return projectTaskRepository.findByAssigneeId(userId);
     }
 
     /**

@@ -4,8 +4,11 @@ import com.company.taskmanagement.model.User;
 import com.company.taskmanagement.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class UserService {
@@ -62,4 +65,8 @@ public class UserService {
         return userRepository.existsByEmail(email);
     }
 
+    // Новый метод для получения множества пользователей по ID
+    public Set<User> getUsersByIds(Set<Long> userIds) {
+        return new HashSet<>(userRepository.findAllById(userIds));
+    }
 }
