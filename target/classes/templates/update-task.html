@@ -31,6 +31,7 @@
     <a th:href="@{/archive}" class="nav-link">📁 Архив задач</a>
     <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')" class="nav-link">👥 Пользователи</a>
     <a th:href="@{/dashboard}" class="nav-link">🏠 Главная</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')" class="nav-link">📊 Отчеты</a>
 </div>
 
 <div class="content">

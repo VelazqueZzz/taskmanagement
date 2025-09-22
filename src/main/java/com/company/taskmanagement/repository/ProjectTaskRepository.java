@@ -21,9 +21,7 @@ public interface ProjectTaskRepository extends JpaRepository<ProjectTask, Long> 
     @Query("SELECT t FROM ProjectTask t JOIN t.assignees a WHERE a.id = :userId AND t.archived = false")
     List<ProjectTask> findByAssigneeIdAndArchivedFalse(@Param("userId") Long userId);
 
-    // Остальные методы остаются без изменений
-    List<ProjectTask> findByStatus(String status);
-    List<ProjectTask> findByPriority(String priority);
+
 
     // Методы для архива
     List<ProjectTask> findByArchivedTrue();
@@ -68,4 +66,7 @@ public interface ProjectTaskRepository extends JpaRepository<ProjectTask, Long> 
 
     @Query("SELECT t FROM ProjectTask t WHERE t.archived = false AND t.dueDate < :date")
     List<ProjectTask> findActiveTasksWithDueDateBefore(@Param("date") LocalDate date);
+    // Добавляем эти методы в существующий репозиторий:
+
+
 }

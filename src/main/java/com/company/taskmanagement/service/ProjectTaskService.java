@@ -82,4 +82,5 @@ public class ProjectTaskService {
         ProjectTask task = getTaskById(taskId).orElse(null);
         return task != null ? task.getAssignees() : null;
     }
+
 }
