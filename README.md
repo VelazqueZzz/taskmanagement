@@ -7,7 +7,7 @@
 Скрипт для создания базы и таблиц:
 
 
-CREATE DATABASE task_management_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+    CREATE DATABASE task_management_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
 -- Используем созданную базу
