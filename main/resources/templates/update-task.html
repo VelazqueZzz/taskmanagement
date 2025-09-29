@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Task</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="header">
+    <h1>TaskFlow Pro</h1>
+    <div class="user-info">
+        <a th:href="@{'/tasks/view/' + ${task.id}}" class="btn btn-secondary">View</a>
+        <a th:href="@{/tasks}" class="btn btn-secondary">Back</a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card">
+        <h2>Edit Task #<span th:text="${task.id}"></span></h2>
+
+        <!-- Messages -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            ✅ <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error">
+            ❌ <span th:text="${errorMessage}"></span>
+        </div>
+
+        <form th:action="@{'/tasks/update/' + ${task.id}}" method="post" enctype="multipart/form-data">
+
+            <!-- Basic fields -->
+            <div class="form-group">
+                <label for="title">Title *</label>
+                <input type="text" id="title" name="title" th:value="${task.title}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" th:text="${task.description}"></textarea>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="status">Status *</label>
+                    <select id="status" name="status" required>
+                        <option value="PENDING" th:selected="${task.status.toString() == 'PENDING'}">Pending</option>
+                        <option value="IN_PROGRESS" th:selected="${task.status.toString() == 'IN_PROGRESS'}">In Progress</option>
+                        <option value="COMPLETED" th:selected="${task.status.toString() == 'COMPLETED'}">Completed</option>
+                        <option value="CANCELLED" th:selected="${task.status.toString() == 'CANCELLED'}">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="priority">Priority *</label>
+                    <select id="priority" name="priority" required>
+                        <option value="LOW" th:selected="${task.priority.toString() == 'LOW'}">Low</option>
+                        <option value="MEDIUM" th:selected="${task.priority.toString() == 'MEDIUM'}">Medium</option>
+                        <option value="HIGH" th:selected="${task.priority.toString() == 'HIGH'}">High</option>
+                        <option value="URGENT" th:selected="${task.priority.toString() == 'URGENT'}">Urgent</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="dueDate">Due Date</label>
+                <input type="date" id="dueDate" name="dueDate" th:value="${task.dueDate}">
+            </div>
+
+            <!-- Assignees -->
+            <div class="form-group">
+                <label for="userIds">Assignees *</label>
+                <select id="userIds" name="userIds" multiple required size="5">
+                    <option th:each="user : ${users}"
+                            th:value="${user.id}"
+                            th:selected="${#lists.contains(task.assignees, user)}"
+                            th:text="${user.username}">
+                    </option>
+                </select>
+                <div class="form-hint">Use Ctrl+Click to select multiple users</div>
+            </div>
+
+            <!-- Existing Files Section -->
+            <div class="form-group" th:if="${task.attachments != null and not task.attachments.empty}">
+                <label>📎 Current Files</label>
+                <div class="existing-files">
+                    <div th:each="file : ${task.attachments}" class="existing-file">
+                        <div class="file-info">
+                            <span class="file-icon" th:text="${file.fileIcon}"></span>
+                            <span class="file-name" th:text="${file.originalFilename}"></span>
+                            <small class="file-size" th:text="'(' + ${file.formattedFileSize} + ')'"></small>
+                        </div>
+                        <div class="file-actions">
+                            <a th:href="@{'/files/download/' + ${file.id}}" class="btn btn-sm btn-primary" title="Download">
+                                📥 Download
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger delete-file-btn"
+                                    th:data-file-id="${file.id}"
+                                    th:data-file-name="${file.originalFilename}"
+                                    title="Delete File">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-hint">Files marked for deletion will be removed when you save changes</div>
+            </div>
+
+            <!-- Hidden field for files to delete -->
+            <input type="hidden" id="deleteFilesInput" name="deleteFiles" value="">
+
+            <!-- New Files Section -->
+            <div class="form-group">
+                <label for="newFiles">📤 Add New Files</label>
+                <div class="file-upload-area">
+                    <input type="file" id="newFiles" name="newFiles" multiple
+                           accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                           style="display: none;">
+                    <div class="file-upload-button" onclick="document.getElementById('newFiles').click()">
+                        <span class="upload-icon">📁</span>
+                        <span class="upload-text">Click to select files or drag and drop</span>
+                        <small class="upload-hint">Max 10MB per file</small>
+                    </div>
+                    <div id="filePreview" class="file-preview"></div>
+                </div>
+            </div>
+
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">💾 Save Changes</button>
+                <a th:href="@{'/tasks/view/' + ${task.id}}" class="btn btn-secondary">👁️ View Task</a>
+                <a th:href="@{/tasks}" class="btn btn-secondary">❌ Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        const deleteFilesInput = document.getElementById('deleteFilesInput');
+        const filesToDelete = new Set();
+
+        // Initialize delete files from existing checkboxes (for backward compatibility)
+        document.querySelectorAll('input[name="deleteFiles"]').forEach(checkbox => {
+            if (checkbox.checked) {
+                filesToDelete.add(checkbox.value);
+            }
+        });
+        updateDeleteFilesInput();
+
+        // Delete file buttons
+        document.querySelectorAll('.delete-file-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const fileId = this.getAttribute('data-file-id');
+                const fileName = this.getAttribute('data-file-name');
+
+                if (confirm('Are you sure you want to delete "' + fileName + '"?')) {
+                    filesToDelete.add(fileId);
+                    updateDeleteFilesInput();
+                    this.closest('.existing-file').style.opacity = '0.5';
+                    this.disabled = true;
+                    this.innerHTML = '🗑️ Marked for deletion';
+                }
+            });
+        });
+
+        // File upload preview
+        document.getElementById('newFiles').addEventListener('change', function(e) {
+            previewFiles(this.files);
+        });
+
+        // Drag and drop
+        const uploadArea = document.querySelector('.file-upload-button');
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.style.backgroundColor = '#e3f2fd';
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.style.backgroundColor = '';
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.style.backgroundColor = '';
+            const files = e.dataTransfer.files;
+            document.getElementById('newFiles').files = files;
+            previewFiles(files);
+        });
+
+        // Form validation
+        form.addEventListener('submit', function(e) {
+            // Validate assignees
+            const userIdsSelect = document.getElementById('userIds');
+            const selectedUsers = Array.from(userIdsSelect.selectedOptions);
+
+            if (selectedUsers.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one assignee!');
+                return false;
+            }
+
+            // Validate file sizes
+            const newFilesInput = document.getElementById('newFiles');
+            if (newFilesInput.files.length > 0) {
+                for (let file of newFilesInput.files) {
+                    if (file.size > 10 * 1024 * 1024) {
+                        e.preventDefault();
+                        alert('File "' + file.name + '" exceeds maximum size of 10MB');
+                        return false;
+                    }
+                }
+            }
+
+            // Show loading
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.innerHTML = '💾 Saving...';
+                submitBtn.disabled = true;
+            }
+        });
+
+        function updateDeleteFilesInput() {
+            deleteFilesInput.value = Array.from(filesToDelete).join(',');
+        }
+
+        function previewFiles(files) {
+            const previewContainer = document.getElementById('filePreview');
+            previewContainer.innerHTML = '';
+
+            if (files.length > 0) {
+                const fileList = document.createElement('div');
+                fileList.className = 'file-list';
+
+                for (let file of files) {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.innerHTML = `
+                            <span class="file-icon">${getFileIcon(file.type)}</span>
+                            <span class="file-name">${file.name}</span>
+                            <span class="file-size">(${formatFileSize(file.size)})</span>
+                            <button type="button" class="btn-remove" onclick="removeFileFromPreview(this, '${file.name}')">×</button>
+                        `;
+                    fileList.appendChild(fileItem);
+                }
+
+                previewContainer.appendChild(fileList);
+            }
+        }
+    });
+
+    function getFileIcon(fileType) {
+        if (fileType.startsWith('image/')) return '🖼️';
+        if (fileType.includes('pdf')) return '📄';
+        if (fileType.includes('word')) return '📝';
+        if (fileType.includes('excel')) return '📊';
+        if (fileType.includes('zip')) return '📦';
+        return '📎';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function removeFileFromPreview(button, fileName) {
+        const fileItem = button.parentElement;
+        fileItem.remove();
+
+        // Remove from file input
+        const fileInput = document.getElementById('newFiles');
+        const files = Array.from(fileInput.files);
+        const updatedFiles = files.filter(file => file.name !== fileName);
+
+        // Create new FileList
+        const dataTransfer = new DataTransfer();
+        updatedFiles.forEach(file => dataTransfer.items.add(file));
+        fileInput.files = dataTransfer.files;
+    }
+</script>
+
+<style>
+    .existing-files {
+        margin: 15px 0;
+    }
+    .existing-file {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: #f8f9fa;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        border: 1px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+    .file-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+    }
+    .file-actions {
+        display: flex;
+        gap: 8px;
+    }
+    .file-icon {
+        font-size: 1.5rem;
+    }
+    .file-name {
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+    .file-size {
+        color: #6c757d;
+        font-size: 0.85rem;
+    }
+    .form-hint {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    select[multiple] {
+        min-height: 120px;
+        padding: 8px;
+    }
+
+    /* File upload styles */
+    .file-upload-area {
+        margin-top: 8px;
+    }
+    .file-upload-button {
+        border: 2px dashed #dee2e6;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #fafbfc;
+    }
+    .file-upload-button:hover {
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+    .upload-icon {
+        font-size: 2rem;
+        display: block;
+        margin-bottom: 8px;
+    }
+    .upload-text {
+        font-weight: 500;
+        display: block;
+        margin-bottom: 4px;
+    }
+    .upload-hint {
+        color: #6c757d;
+        font-size: 0.8rem;
+    }
+
+    /* File preview styles */
+    .file-preview {
+        margin-top: 15px;
+    }
+    .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        background: #e9ecef;
+        border-radius: 6px;
+        gap: 12px;
+    }
+    .btn-remove {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        margin-left: auto;
+    }
+    .btn-remove:hover {
+        background: #c82333;
+    }
+
+    /* Button styles */
+    .btn-sm {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    .btn-danger {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+    .btn-danger:hover {
+        background: #c82333;
+        border-color: #bd2130;
+    }
+
+    @media (max-width: 768px) {
+        .existing-file {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .file-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+    }
+</style>
+</body>
+</html>
