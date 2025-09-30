@@ -116,6 +116,34 @@
             </div>
         </div>
 
+        <!-- Прикрепленные файлы -->
+        <div class="attachments-section" th:if="${task?.attachments != null and not task.attachments.empty}">
+            <h3>📎 Прикрепленные файлы</h3>
+            <div class="attachments-list">
+                <div th:each="file : ${task.attachments}" class="attachment-item">
+                    <div class="attachment-icon" th:text="${file.fileIcon}"></div>
+                    <div class="attachment-info">
+                        <div class="attachment-name" th:text="${file.originalFilename}"></div>
+                        <div class="attachment-meta">
+                            <span th:text="${file.formattedFileSize}"></span>
+                            <span>•</span>
+                            <span th:text="${#temporals.format(file.uploadedAt, 'dd.MM.yyyy HH:mm')}"></span>
+                        </div>
+                    </div>
+                    <div class="attachment-actions">
+                        <a th:href="@{'/files/download/' + ${file.id}}"
+                           class="btn btn-sm btn-primary" title="Скачать">📥</a>
+                        <span class="btn btn-sm btn-secondary"
+                              title="Для удаления файла перейдите в режим редактирования">🗑️</span>
+                    </div>
+                </div>
+            </div>
+            <div class="form-hint" style="margin-top: 1rem;">
+                💡 <strong>Удаление файлов:</strong> Для удаления прикрепленных файлов перейдите в
+                <a th:href="@{'/tasks/update/' + ${task?.id}}" style="color: var(--primary);">режим редактирования задачи</a>
+            </div>
+        </div>
+
         <!-- Действия -->
         <div class="task-actions">
             <a th:href="@{/tasks}" class="btn btn-secondary">← Назад к списку</a>
@@ -234,6 +262,52 @@
         border-top: 2px solid var(--gray-light);
     }
 
+    .attachments-section {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: var(--gray-light);
+        border-radius: var(--border-radius);
+    }
+
+    .attachment-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: white;
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+        transition: var(--transition);
+    }
+
+    .attachment-item:hover {
+        transform: translateX(5px);
+        box-shadow: var(--shadow);
+    }
+
+    .attachment-icon {
+        font-size: 2rem;
+        margin-right: 1rem;
+    }
+
+    .attachment-info {
+        flex: 1;
+    }
+
+    .attachment-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .attachment-meta {
+        font-size: 0.8rem;
+        color: var(--gray);
+    }
+
+    .attachment-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
     @media (max-width: 768px) {
         .task-meta {
             flex-direction: column;
@@ -250,6 +324,17 @@
 
         .task-actions .btn {
             width: 100%;
+        }
+
+        .attachment-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .attachment-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
         }
     }
 </style>

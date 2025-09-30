@@ -4,12 +4,15 @@ import com.company.taskmanagement.model.ProjectTask;
 import com.company.taskmanagement.model.User;
 import com.company.taskmanagement.service.ProjectTaskService;
 import com.company.taskmanagement.service.UserService;
+import com.company.taskmanagement.service.ArchiveService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+
+import java.util.List;
 
 @Controller
 public class AuthController {
@@ -19,6 +22,9 @@ public class AuthController {
 
     @Autowired
     private ProjectTaskService taskService;
+
+    @Autowired
+    private ArchiveService archiveService;
 
     @GetMapping("/")
     public String home() {
@@ -44,14 +50,43 @@ public class AuthController {
             model.addAttribute("currentUser", currentUser);
 
             if (currentUser.getRole().equals("ADMIN")) {
+                // Для администратора
                 model.addAttribute("totalUsers", userService.getAllUsers().size());
                 model.addAttribute("totalTasks", taskService.getAllTasks().size());
+
+                // Получаем реальные данные о задачах
+                List<ProjectTask> allTasks = taskService.getAllTasks();
+                long activeTasksCount = allTasks.stream()
+                        .filter(task -> !task.isArchived())
+                        .count();
+                long archivedTasksCount = allTasks.stream()
+                        .filter(task -> task.isArchived())
+                        .count();
+
+                model.addAttribute("totalActiveTasks", activeTasksCount);
+                model.addAttribute("totalArchivedTasks", archivedTasksCount);
+
             } else {
-                model.addAttribute("userTasks", taskService.getTasksByUser(currentUser));
-                model.addAttribute("completedTasks", taskService.getTasksByUser(currentUser)
-                        .stream().filter(task -> task.getStatus() == ProjectTask.TaskStatus.COMPLETED).count());
-                model.addAttribute("pendingTasks", taskService.getTasksByUser(currentUser)
-                        .stream().filter(task -> task.getStatus() == ProjectTask.TaskStatus.PENDING).count());
+                // Для обычного пользователя
+                List<ProjectTask> userTasks = taskService.getTasksByUser(currentUser);
+                List<ProjectTask> userActiveTasks = archiveService.getUserActiveTasks(currentUser.getId());
+                List<ProjectTask> userArchivedTasks = archiveService.getUserArchivedTasks(currentUser.getId());
+
+                model.addAttribute("userTasks", userTasks);
+                model.addAttribute("userActiveTasks", userActiveTasks);
+                model.addAttribute("userArchivedTasks", userArchivedTasks);
+
+                long completedTasks = userTasks.stream()
+                        .filter(task -> task.getStatus() == ProjectTask.TaskStatus.COMPLETED)
+                        .count();
+                long pendingTasks = userTasks.stream()
+                        .filter(task -> task.getStatus() == ProjectTask.TaskStatus.PENDING)
+                        .count();
+
+                model.addAttribute("completedTasks", completedTasks);
+                model.addAttribute("pendingTasks", pendingTasks);
+                model.addAttribute("totalActiveTasks", userActiveTasks.size());
+                model.addAttribute("totalArchivedTasks", userArchivedTasks.size());
             }
 
             return "dashboard";

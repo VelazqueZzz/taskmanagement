@@ -48,7 +48,7 @@
             ❌ <span th:text="${errorMessage}"></span>
         </div>
 
-        <form th:action="@{/tasks/create}" method="post" id="taskForm">
+        <form th:action="@{/tasks/create}" method="post" id="taskForm" enctype="multipart/form-data">
             <div class="form-row">
                 <div class="form-group">
                     <label for="title">📝 Название задачи *</label>
@@ -116,6 +116,19 @@
                 <div class="error-message" id="dueDate-error"></div>
             </div>
 
+            <!-- Новое поле для файлов -->
+            <div class="form-group">
+                <label for="files">📎 Прикрепить файлы (опционально)</label>
+                <input type="file" id="files" name="files" multiple
+                       accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar"
+                       onchange="previewFiles(this)">
+                <div class="form-hint">
+                    Можно выбрать несколько файлов. Макс. размер: 10MB каждый.
+                    Разрешены: изображения, PDF, документы Office, текстовые файлы, архивы.
+                </div>
+                <div id="filePreview" class="file-preview"></div>
+            </div>
+
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
 
             <div class="form-actions">
@@ -179,6 +192,53 @@
         }
     }
 
+    function previewFiles(input) {
+        const previewContainer = document.getElementById('filePreview');
+        previewContainer.innerHTML = '';
+
+        if (input.files.length > 0) {
+            const fileList = document.createElement('div');
+            fileList.className = 'file-list';
+
+            for (let i = 0; i < input.files.length; i++) {
+                const file = input.files[i];
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <span class="file-icon">${getFileIcon(file.type)}</span>
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">(${formatFileSize(file.size)})</span>
+                    <button type="button" class="btn-remove" onclick="removeFileItem(this)">×</button>
+                `;
+                fileList.appendChild(fileItem);
+            }
+
+            previewContainer.appendChild(fileList);
+        }
+    }
+
+    function getFileIcon(fileType) {
+        if (fileType.startsWith('image/')) return '🖼️';
+        if (fileType.includes('pdf')) return '📄';
+        if (fileType.includes('word')) return '📝';
+        if (fileType.includes('excel')) return '📊';
+        if (fileType.includes('zip')) return '📦';
+        return '📎';
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function removeFileItem(button) {
+        button.parentElement.remove();
+        // Также нужно очистить input файла
+        const fileInput = document.getElementById('files');
+        fileInput.value = '';
+    }
+
     function showError(field, errorDiv, message) {
         field.style.borderColor = '#ef4444';
         errorDiv.textContent = message;
@@ -199,6 +259,7 @@
         const inputs = document.querySelectorAll('input, select, textarea');
         inputs.forEach(input => input.style.borderColor = '');
 
+        document.getElementById('filePreview').innerHTML = '';
         document.getElementById('description-count').textContent = '0/1000 символов';
         document.getElementById('description-count').style.color = 'var(--gray)';
     }
@@ -220,15 +281,25 @@
             isValid = false;
         }
 
+        // Валидация размера файлов
+        const fileInput = document.getElementById('files');
+        if (fileInput.files.length > 0) {
+            for (let file of fileInput.files) {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Файл "${file.name}" превышает максимальный размер 10MB`);
+                    isValid = false;
+                    break;
+                }
+            }
+        }
+
         if (!isValid) {
             e.preventDefault();
-            // Прокрутка к первой ошибке
             const firstError = document.querySelector('.error-message:not(:empty)');
             if (firstError) {
                 firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         } else {
-            // Показ loading состояния
             const submitBtn = document.getElementById('submitBtn');
             submitBtn.innerHTML = '<span class="loading"></span> Создание...';
             submitBtn.disabled = true;
@@ -262,7 +333,6 @@
         color: var(--gray);
     }
 
-    /* Стили для multiple select */
     select[multiple] {
         min-height: 120px;
         padding: 0.5rem;
@@ -277,6 +347,52 @@
     select[multiple] option:checked {
         background: var(--primary);
         color: white;
+    }
+
+    .file-preview {
+        margin-top: 1rem;
+    }
+
+    .file-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .file-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--gray-light);
+        border-radius: var(--border-radius);
+        gap: 0.75rem;
+    }
+
+    .file-icon {
+        font-size: 1.2rem;
+    }
+
+    .file-name {
+        flex: 1;
+        font-weight: 500;
+    }
+
+    .file-size {
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    .btn-remove {
+        background: var(--danger);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 </style>
 </body>
