@@ -40,11 +40,20 @@
         created_at DATE NOT NULL,
         is_archived BOOLEAN NOT NULL DEFAULT FALSE,
         archived_date DATE,
+        
         INDEX idx_status (status),
         INDEX idx_priority (priority),
         INDEX idx_archived (is_archived),
         INDEX idx_due_date (due_date)
     );
+    
+-- добавьте еще 2 столбца в таблицу tasks они были созданы позднее
+
+            USE task_management_db;
+            ALTER TABLE tasks 
+            ADD COLUMN completed_date DATE NULL,
+            ADD COLUMN status_changed_date DATE NULL;
+    
 
 -- Таблица связи многие-ко-многим для исполнителей задач
 
