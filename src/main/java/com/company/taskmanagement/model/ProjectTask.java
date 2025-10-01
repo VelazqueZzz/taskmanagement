@@ -85,6 +85,48 @@ public class ProjectTask {
     @Column(name = "archived_date")
     private LocalDate archivedDate;
 
+    @Column(name = "completed_date")
+    private LocalDate completedDate;
+
+    @Column(name = "status_changed_date")
+    private LocalDate statusChangedDate;
+
+    // Геттеры и сеттеры
+    public LocalDate getCompletedDate() {
+        return completedDate;
+    }
+
+    public void setCompletedDate(LocalDate completedDate) {
+        this.completedDate = completedDate;
+    }
+
+    public LocalDate getStatusChangedDate() {
+        return statusChangedDate;
+    }
+
+    public void setStatusChangedDate(LocalDate statusChangedDate) {
+        this.statusChangedDate = statusChangedDate;
+    }
+
+    // Улучшенный метод для обновления статуса
+    public void updateStatus(TaskStatus newStatus) {
+        TaskStatus oldStatus = this.status;
+        this.status = newStatus;
+        this.statusChangedDate = LocalDate.now();
+
+        // Если статус меняется на COMPLETED, устанавливаем дату завершения
+        if (newStatus == TaskStatus.COMPLETED && oldStatus != TaskStatus.COMPLETED) {
+            this.completedDate = LocalDate.now();
+        }
+
+        // Если задача была завершена, но статус меняется на другой - очищаем дату завершения
+        if (oldStatus == TaskStatus.COMPLETED && newStatus != TaskStatus.COMPLETED) {
+            this.completedDate = null;
+        }
+    }
+
+
+
     // Множество исполнителей
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -113,6 +155,7 @@ public class ProjectTask {
         this.createdAt = LocalDate.now();
         this.archived = false;
     }
+
 
     // Геттеры и сеттеры
     public Long getId() {
@@ -297,4 +340,37 @@ public class ProjectTask {
     public static TaskPriority[] getAllPriorities() {
         return TaskPriority.values();
     }
+    // Добавить в класс ProjectTask.java (в конец класса, перед закрывающей фигурной скобкой)
+
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private Set<FileAttachment> attachments = new HashSet<>();
+
+    public Set<FileAttachment> getAttachments() {
+        return attachments;
+    }
+
+    public void setAttachments(Set<FileAttachment> attachments) {
+        this.attachments = attachments;
+    }
+
+    // Вспомогательный метод
+    public int getAttachmentCount() {
+        return attachments != null ? attachments.size() : 0;
+    }
+
+    public String getFormattedTotalAttachmentSize() {
+        if (attachments == null || attachments.isEmpty()) {
+            return "0 B";
+        }
+
+        long totalSize = attachments.stream()
+                .mapToLong(FileAttachment::getFileSize)
+                .sum();
+
+        if (totalSize < 1024) return totalSize + " B";
+        else if (totalSize < 1024 * 1024) return String.format("%.1f KB", totalSize / 1024.0);
+        else return String.format("%.1f MB", totalSize / (1024.0 * 1024.0));
+    }
+
+
 }

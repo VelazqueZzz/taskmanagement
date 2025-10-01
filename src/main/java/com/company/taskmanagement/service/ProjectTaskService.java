@@ -5,12 +5,15 @@ import com.company.taskmanagement.model.User;
 import com.company.taskmanagement.repository.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 @Service
+@Transactional
 public class ProjectTaskService {
 
     @Autowired
@@ -19,68 +22,242 @@ public class ProjectTaskService {
     @Autowired
     private UserService userService;
 
-    // Существующие методы
+    /**
+     * Получить все задачи
+     */
     public List<ProjectTask> getAllTasks() {
         return projectTaskRepository.findAll();
     }
 
+    /**
+     * Найти задачу по ID с проверкой существования
+     */
     public Optional<ProjectTask> getTaskById(Long id) {
+        if (id == null) {
+            return Optional.empty();
+        }
         return projectTaskRepository.findById(id);
     }
 
+    /**
+     * Получить задачи пользователя
+     */
     public List<ProjectTask> getTasksByUser(User user) {
         return projectTaskRepository.findByAssigneeId(user.getId());
     }
 
+    /**
+     * Получить задачи пользователя по статусу
+     */
+    public List<ProjectTask> getTasksByUserAndStatus(User user, ProjectTask.TaskStatus status) {
+        return projectTaskRepository.findByAssigneeIdAndStatusAndArchivedFalse(user.getId(), status.toString());
+    }
+
+    /**
+     * Создать новую задачу с валидацией
+     */
     public ProjectTask createTask(ProjectTask task) {
+        validateTask(task);
+
+        // Устанавливаем дату создания если не установлена
+        if (task.getCreatedAt() == null) {
+            task.setCreatedAt(LocalDate.now());
+        }
+
+        // Устанавливаем дату изменения статуса
+        task.setStatusChangedDate(LocalDate.now());
+
         return projectTaskRepository.save(task);
     }
 
+    /**
+     * Обновить задачу с логикой дат завершения
+     */
     public ProjectTask updateTask(Long id, ProjectTask taskDetails) {
-        return projectTaskRepository.findById(id).map(task -> {
-            task.setTitle(taskDetails.getTitle());
-            task.setDescription(taskDetails.getDescription());
-            task.setStatus(taskDetails.getStatus());
-            task.setPriority(taskDetails.getPriority());
-            task.setDueDate(taskDetails.getDueDate());
-            task.setAssignees(taskDetails.getAssignees());
-            task.setArchived(taskDetails.isArchived());
-            task.setArchivedDate(taskDetails.getArchivedDate());
-            return projectTaskRepository.save(task);
-        }).orElse(null);
+        return projectTaskRepository.findById(id).map(existingTask -> {
+            // Сохраняем старый статус для логики дат
+            ProjectTask.TaskStatus oldStatus = existingTask.getStatus();
+
+            // Обновляем базовые поля
+            existingTask.setTitle(taskDetails.getTitle());
+            existingTask.setDescription(taskDetails.getDescription());
+            existingTask.setPriority(taskDetails.getPriority());
+            existingTask.setDueDate(taskDetails.getDueDate());
+            existingTask.setAssignees(taskDetails.getAssignees());
+
+            // Обновляем статус с логикой дат
+            updateTaskStatus(existingTask, taskDetails.getStatus(), oldStatus);
+
+            // Архивация
+            existingTask.setArchived(taskDetails.isArchived());
+            if (taskDetails.isArchived() && !existingTask.isArchived()) {
+                existingTask.setArchivedDate(LocalDate.now());
+            } else if (!taskDetails.isArchived() && existingTask.isArchived()) {
+                existingTask.setArchivedDate(null);
+            }
+
+            return projectTaskRepository.save(existingTask);
+        }).orElseThrow(() -> new IllegalArgumentException("Задача с ID " + id + " не найдена"));
     }
 
+    /**
+     * Обновление статуса задачи с логикой дат
+     */
+    private void updateTaskStatus(ProjectTask task, ProjectTask.TaskStatus newStatus, ProjectTask.TaskStatus oldStatus) {
+        if (newStatus != oldStatus) {
+            task.setStatus(newStatus);
+            task.setStatusChangedDate(LocalDate.now());
+
+            // Логика для даты завершения
+            if (newStatus == ProjectTask.TaskStatus.COMPLETED) {
+                // Устанавливаем дату завершения только если она еще не установлена
+                if (task.getCompletedDate() == null) {
+                    task.setCompletedDate(LocalDate.now());
+                }
+            } else if (oldStatus == ProjectTask.TaskStatus.COMPLETED) {
+                // Если статус меняется с COMPLETED на другой - очищаем дату завершения
+                task.setCompletedDate(null);
+            }
+        } else {
+            task.setStatus(newStatus);
+        }
+    }
+
+    /**
+     * Завершить задачу - устанавливаем дату завершения
+     */
+    public ProjectTask completeTask(Long taskId) {
+        return projectTaskRepository.findById(taskId).map(task -> {
+            // Сохраняем старый статус
+            ProjectTask.TaskStatus oldStatus = task.getStatus();
+
+            // Устанавливаем новый статус
+            task.setStatus(ProjectTask.TaskStatus.COMPLETED);
+            task.setStatusChangedDate(LocalDate.now());
+
+            // Устанавливаем дату завершения только если задача еще не была завершена
+            if (oldStatus != ProjectTask.TaskStatus.COMPLETED) {
+                task.setCompletedDate(LocalDate.now());
+            }
+
+            return projectTaskRepository.save(task);
+        }).orElseThrow(() -> new IllegalArgumentException("Задача с ID " + taskId + " не найдена"));
+    }
+
+    /**
+     * Удалить задачу с проверкой существования
+     */
+    @Transactional
     public boolean deleteTask(Long id) {
-        if (projectTaskRepository.existsById(id)) {
-            projectTaskRepository.deleteById(id);
-            return true;
+        if (!projectTaskRepository.existsById(id)) {
+            return false;
         }
-        return false;
+        projectTaskRepository.deleteById(id);
+        return true;
     }
 
-    // Новые методы для работы с множественными исполнителями
+    /**
+     * Назначить пользователей на задачу
+     */
     public ProjectTask assignUsersToTask(Long taskId, Set<Long> userIds) {
-        ProjectTask task = getTaskById(taskId).orElse(null);
-        if (task != null) {
-            Set<User> users = userService.getUsersByIds(userIds);
-            task.setAssignees(users);
-            return projectTaskRepository.save(task);
+        ProjectTask task = getTaskById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Задача с ID " + taskId + " не найдена"));
+
+        Set<User> users = userService.getUsersByIds(userIds);
+        if (users.isEmpty()) {
+            throw new IllegalArgumentException("Не указаны пользователи для назначения");
         }
-        return null;
+
+        task.setAssignees(users);
+        return projectTaskRepository.save(task);
     }
 
-    public ProjectTask removeUserFromTask(Long taskId, Long userId) {
-        ProjectTask task = getTaskById(taskId).orElse(null);
-        if (task != null) {
-            task.getAssignees().removeIf(user -> user.getId().equals(userId));
-            return projectTaskRepository.save(task);
-        }
-        return null;
-    }
-
+    /**
+     * Получить исполнителей задачи
+     */
     public Set<User> getTaskAssignees(Long taskId) {
-        ProjectTask task = getTaskById(taskId).orElse(null);
-        return task != null ? task.getAssignees() : null;
+        ProjectTask task = getTaskById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Задача с ID " + taskId + " не найдена"));
+        return task.getAssignees();
     }
 
+    /**
+     * Валидация задачи перед сохранением
+     */
+    private void validateTask(ProjectTask task) {
+        if (task.getTitle() == null || task.getTitle().trim().isEmpty()) {
+            throw new IllegalArgumentException("Название задачи не может быть пустым");
+        }
+        if (task.getStatus() == null) {
+            task.setStatus(ProjectTask.TaskStatus.PENDING);
+        }
+        if (task.getPriority() == null) {
+            task.setPriority(ProjectTask.TaskPriority.MEDIUM);
+        }
+    }
+
+    /**
+     * Восстановить даты завершения для существующих завершенных задач
+     */
+    @Transactional
+    public void fixCompletedDates() {
+        List<ProjectTask> completedTasks = projectTaskRepository.findByStatusAndArchivedFalse("COMPLETED");
+
+        int fixedCount = 0;
+        for (ProjectTask task : completedTasks) {
+            if (task.getCompletedDate() == null) {
+                // Используем дату изменения статуса или дату создания как приблизительную дату завершения
+                if (task.getStatusChangedDate() != null) {
+                    task.setCompletedDate(task.getStatusChangedDate());
+                } else {
+                    task.setCompletedDate(task.getCreatedAt());
+                }
+                projectTaskRepository.save(task);
+                fixedCount++;
+                System.out.println("Исправлена дата завершения для задачи ID: " + task.getId());
+            }
+        }
+        System.out.println("Всего исправлено задач: " + fixedCount);
+    }
+
+    /**
+     * Получить статистику по задачам
+     */
+    public TaskStatistics getTaskStatistics(Long userId) {
+        TaskStatistics stats = new TaskStatistics();
+
+        if (userId != null) {
+            stats.setTotalTasks(projectTaskRepository.countActiveTasksByUserId(userId) +
+                    projectTaskRepository.countArchivedTasksByUserId(userId));
+            stats.setActiveTasks(projectTaskRepository.countActiveTasksByUserId(userId));
+            stats.setArchivedTasks(projectTaskRepository.countArchivedTasksByUserId(userId));
+            stats.setCompletedTasks(projectTaskRepository.findByAssigneeIdAndStatusAndArchivedFalse(userId, "COMPLETED").size());
+        } else {
+            stats.setTotalTasks(projectTaskRepository.count());
+            stats.setActiveTasks(projectTaskRepository.countActiveTasks());
+            stats.setArchivedTasks(projectTaskRepository.countArchivedTasks());
+        }
+
+        return stats;
+    }
+
+    /**
+     * Класс для статистики задач
+     */
+    public static class TaskStatistics {
+        private long totalTasks;
+        private long activeTasks;
+        private long archivedTasks;
+        private long completedTasks;
+
+        // геттеры и сеттеры
+        public long getTotalTasks() { return totalTasks; }
+        public void setTotalTasks(long totalTasks) { this.totalTasks = totalTasks; }
+        public long getActiveTasks() { return activeTasks; }
+        public void setActiveTasks(long activeTasks) { this.activeTasks = activeTasks; }
+        public long getArchivedTasks() { return archivedTasks; }
+        public void setArchivedTasks(long archivedTasks) { this.archivedTasks = archivedTasks; }
+        public long getCompletedTasks() { return completedTasks; }
+        public void setCompletedTasks(long completedTasks) { this.completedTasks = completedTasks; }
+    }
 }

@@ -2,15 +2,27 @@ package com.company.taskmanagement.service;
 
 import com.company.taskmanagement.model.User;
 import com.company.taskmanagement.repository.UserRepository;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.ssl.SslProperties;
 import org.springframework.stereotype.Component;
+
+import java.io.File;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private UserRepository userRepository;
+    @PostConstruct
+    public void init() {
+        // Создание директории для загрузок
+        File uploadDir = new File("uploads");
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+    }
 
     @Override
     public void run(String... args) throws Exception {
@@ -50,4 +62,5 @@ public class DataInitializer implements CommandLineRunner {
             System.out.println("✅ Пользователь создан: user2/password");
         }
     }
+
 }

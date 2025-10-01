@@ -94,11 +94,18 @@ public class ArchiveService {
         return projectTaskRepository.findByAssigneeIdAndArchivedTrue(userId);
     }
 
+
     /**
      * Получить активные задачи пользователя
      */
     public List<ProjectTask> getUserActiveTasks(Long userId) {
         return projectTaskRepository.findByAssigneeIdAndArchivedFalse(userId);
+    }
+    /**
+     * Получить все задачи (для администратора)
+     */
+    public List<ProjectTask> getAllTasks() {
+        return projectTaskRepository.findAll();
     }
 
     /**
