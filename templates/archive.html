@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6366f1">
+    <title>Архив задач - TaskFlow Pro</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+</head>
+<body>
+<div class="header">
+    <h1>📋 TaskFlow Pro</h1>
+    <div class="user-info">
+        <span>👤 <span sec:authentication="name"></span></span>
+        <a th:href="@{/dashboard}" class="btn btn-sm btn-secondary">📊 Дашборд</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-sm btn-secondary">🚪 Выйти</button>
+        </form>
+    </div>
+</div>
+
+<div class="navigation">
+    <a th:href="@{/tasks/create}" sec:authorize="hasRole('ADMIN')" class="nav-link">
+        ➕ Создать задачу
+    </a>
+    <a th:href="@{/tasks}" class="nav-link">📋 Активные задачи</a>
+    <a th:href="@{/archive}" class="nav-link active">📁 Архив задач</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')" class="nav-link">👥 Пользователи</a>
+    <a th:href="@{/dashboard}" class="nav-link">🏠 Главная</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')" class="nav-link">📊 Отчеты</a>
+</div>
+
+<div class="content">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">📁 Архив завершенных задач</h2>
+            <div class="archive-stats">
+                <span class="stat-badge">📊 Всего: <span th:text="${archivedTasks != null ? #lists.size(archivedTasks) : '0'}"></span></span>
+            </div>
+        </div>
+
+        <!-- Сообщения -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            ✅ <span th:text="${successMessage}"></span>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error">
+            ❌ <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- Список архивных задач -->
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Приоритет</th>
+                    <th>Срок выполнения</th>
+                    <th>Дата архивации</th>
+                    <th>Исполнители</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="task : ${archivedTasks}" class="archived-row"
+                    th:data-task-id="${task?.id}"
+                    th:data-priority="${task?.priority?.toString()}"
+                    th:data-archived-date="${task?.archivedDate?.toString()}">
+
+                    <td th:text="${task?.id} ?: 'N/A'"></td>
+
+                    <td>
+                        <strong th:text="${task?.title} ?: 'Без названия'"></strong>
+                        <div th:if="${task?.description}" class="task-description">
+                            <small th:text="${task?.description}"></small>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span th:if="${task?.priority?.toString() == 'LOW'}"
+                              class="priority-badge priority-low">⬇️ Низкий</span>
+                        <span th:if="${task?.priority?.toString() == 'MEDIUM'}"
+                              class="priority-badge priority-medium">↔️ Средний</span>
+                        <span th:if="${task?.priority?.toString() == 'HIGH'}"
+                              class="priority-badge priority-high">⬆️ Высокий</span>
+                        <span th:if="${task?.priority?.toString() == 'URGENT'}"
+                              class="priority-badge priority-urgent">🔥 Срочный</span>
+                        <span th:if="${task?.priority == null}"
+                              class="priority-badge">❓ Не указан</span>
+                    </td>
+
+                    <td>
+                        <span th:if="${task?.dueDate != null}"
+                              th:text="${#temporals.format(task.dueDate, 'dd.MM.yyyy')}"></span>
+                        <span th:unless="${task?.dueDate != null}" class="text-muted">Не указан</span>
+                    </td>
+
+                    <td>
+                        <span th:if="${task?.archivedDate != null}"
+                              th:text="${#temporals.format(task.archivedDate, 'dd.MM.yyyy')}"></span>
+                        <span th:unless="${task?.archivedDate != null}" class="text-muted">Не указана</span>
+                    </td>
+
+                    <td>
+                        <div class="assignees-preview">
+                            <span th:if="${task?.assignees?.empty}" class="text-muted">Не назначены</span>
+                            <div th:each="user : ${task?.assignees}" class="assignee-badge">
+                                <span th:text="${user?.username} ?: 'Неизвестный'"></span>
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <a th:href="@{'/tasks/view/' + ${task?.id}}" class="btn btn-sm btn-secondary" title="Просмотреть">👁️</a>
+
+                            <form th:action="@{'/archive/unarchive/' + ${task?.id}}" method="post" style="display:inline;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-sm btn-success" title="Восстановить">↩️</button>
+                            </form>
+
+                            <form th:action="@{'/archive/delete/' + ${task?.id}}" method="post" style="display:inline;">
+                                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                                <button type="submit" class="btn btn-sm btn-danger"
+                                        onclick="return confirm('Удалить задачу из архива?')"
+                                        title="Удалить">🗑️</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Состояние пустого архива -->
+        <div th:if="${archivedTasks == null or archivedTasks.empty}" class="empty-state">
+            <div style="text-align: center; padding: 3rem; color: var(--gray);">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">📁</div>
+                <h3>Архив пуст</h3>
+                <p>Здесь будут отображаться завершенные и архивированные задачи</p>
+                <a th:href="@{/tasks}" class="btn btn-primary">📋 Перейти к активным задачам</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .archived-row {
+        opacity: 0.8;
+        background: var(--gray-light);
+        transition: all 0.3s ease;
+    }
+
+    .archived-row:hover {
+        opacity: 1;
+        background: #e9ecef;
+        transform: scale(1.01);
+    }
+
+    .archive-stats {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .stat-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .task-description {
+        color: var(--gray);
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .assignees-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .assignee-badge {
+        background: var(--primary);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+
+    .text-muted {
+        color: var(--gray);
+        font-style: italic;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--gray);
+    }
+
+    @media (max-width: 768px) {
+        .archive-stats {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .assignees-preview {
+            flex-direction: column;
+        }
+
+        .table {
+            font-size: 0.8rem;
+        }
+
+        .table td {
+            padding: 0.5rem;
+        }
+    }
+</style>
+
+<script>
+    // Базовая функциональность фильтрации
+    function filterArchivedTasks(searchText) {
+        const rows = document.querySelectorAll('.archived-row');
+        const search = searchText.toLowerCase();
+
+        rows.forEach(row => {
+            const titleElement = row.querySelector('strong');
+            const title = titleElement ? titleElement.textContent.toLowerCase() : '';
+            const descriptionElement = row.querySelector('.task-description');
+            const description = descriptionElement ? descriptionElement.textContent.toLowerCase() : '';
+
+            const isVisible = title.includes(search) || description.includes(search);
+            row.style.display = isVisible ? '' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Archive page loaded');
+
+        // Плавное появление строк архива
+        const rows = document.querySelectorAll('.archived-row');
+        rows.forEach((row, index) => {
+            setTimeout(() => {
+                row.style.opacity = '1';
+                row.style.transform = 'translateY(0)';
+            }, index * 50);
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#6366f1">
+    <title>Dashboard - TaskFlow Pro</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script th:src="@{/js/app.js}" defer></script>
+    <script th:src="@{/js/animations.js}" defer></script>
+</head>
+<body>
+<div class="header">
+    <h1>📋 TaskFlow Pro</h1>
+    <div class="user-info">
+        <span>👤 <span sec:authentication="name"></span></span>
+        <span>(<span sec:authentication="principal.authorities"></span>)</span>
+        <a th:href="@{/dashboard}" class="btn btn-sm btn-secondary">📊 Дашборд</a>
+        <form th:action="@{/logout}" method="post" style="display:inline;">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+            <button type="submit" class="btn btn-sm btn-secondary">🚪 Logout</button>
+        </form>
+    </div>
+</div>
+
+<div class="navigation">
+    <a th:href="@{/tasks/create}" sec:authorize="hasRole('ADMIN')" class="nav-link">
+        ➕ Создать задачу
+    </a>
+    <a th:href="@{/tasks}" class="nav-link">📋 Активные задачи</a>
+    <a th:href="@{/archive}" class="nav-link">📁 Архив</a>
+    <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')" class="nav-link">👥Пользователи</a>
+    <a th:href="@{/dashboard}" class="nav-link active">🏠 Главная</a>
+    <a th:href="@{/admin/reports}" sec:authorize="hasRole('ADMIN')" class="nav-link">📊 Отчёты</a>
+</div>
+
+<div class="content">
+    <div class="card" data-animate>
+        <div class="card-header">
+            <h2 class="card-title">👋 Welcome, <span th:text="${currentUser.fullName} ?: ${currentUser.username}"></span>!</h2>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Active Tasks Card -->
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <h3>Активные задачи</h3>
+                    <p class="stat-number" th:text="${totalActiveTasks} ?: '0'">0</p>
+                </div>
+            </div>
+
+            <!-- Archived Tasks Card -->
+            <div class="stat-card">
+                <div class="stat-icon">📁</div>
+                <div class="stat-content">
+                    <h3>Архив задач</h3>
+                    <p class="stat-number" th:text="${totalArchivedTasks} ?: '0'">0</p>
+                </div>
+            </div>
+
+            <!-- Users Card (Admin only) -->
+            <div class="stat-card" sec:authorize="hasRole('ADMIN')">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <h3>Пользователи</h3>
+                    <p class="stat-number" th:text="${totalUsers} ?: '0'">0</p>
+                </div>
+            </div>
+
+            <!-- Total Tasks Card (Admin only) -->
+            <div class="stat-card" sec:authorize="hasRole('ADMIN')">
+                <div class="stat-icon">📊</div>
+                <div class="stat-content">
+                    <h3>Всего задач</h3>
+                    <p class="stat-number" th:text="${totalTasks} ?: '0'">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div sec:authorize="hasRole('ADMIN')">
+            <h3 style="margin-bottom: 1rem; color: var(--dark);">👑 Панель администратора</h3>
+            <div class="form-actions">
+                <a th:href="@{/admin/users}" class="btn btn-primary">👥 Редактирование пользователей</a>
+                <a th:href="@{/tasks/create}" class="btn btn-success">➕ Создать задачу</a>
+                <a th:href="@{/archive}" class="btn btn-secondary">📁 Архив задач</a>
+                <a th:href="@{/admin/reports}" class="btn btn-info">📊 Отчёты</a>
+            </div>
+
+            <!-- Admin Statistics -->
+
+
+
+        <!-- User Dashboard -->
+        <div sec:authorize="hasRole('USER')">
+            <h3 style="margin-bottom: 1rem; color: var(--dark);">📊 Your Statistics</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="stat-card small">
+                    <div class="stat-content">
+                        <h4>All Tasks</h4>
+                        <p class="stat-number" th:text="${#lists.size(userTasks)} ?: '0'">0</p>
+                    </div>
+                </div>
+                <div class="stat-card small">
+                    <div class="stat-content">
+                        <h4>✅ Completed</h4>
+                        <p class="stat-number" th:text="${completedTasks} ?: '0'">0</p>
+                    </div>
+                </div>
+                <div class="stat-card small">
+                    <div class="stat-content">
+                        <h4>⏳ Pending</h4>
+                        <p class="stat-number" th:text="${pendingTasks} ?: '0'">0</p>
+                    </div>
+                </div>
+                <div class="stat-card small">
+                    <div class="stat-content">
+                        <h4>📁 Archived</h4>
+                        <p class="stat-number" th:text="${totalArchivedTasks} ?: '0'">0</p>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <a th:href="@{/tasks}" class="btn btn-primary">📋 My Tasks</a>
+                <a th:href="@{/archive}" class="btn btn-secondary">📁 My Archive</a>
+            </div>
+        </div>
+    </div>
+
+
+
+<style>
+    .stat-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stat-card.small {
+        background: var(--gray-light);
+        color: var(--dark);
+        padding: 1rem;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+    }
+
+    .stat-content h3, .stat-content h4 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin: 0;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: white;
+        border-radius: 6px;
+    }
+
+    .stat-label {
+        font-weight: 600;
+        color: var(--gray);
+    }
+
+    .stat-value {
+        font-weight: bold;
+        color: var(--primary);
+        font-size: 1.1rem;
+    }
+
+    .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem;
+        background: var(--gray-light);
+        border-radius: var(--border-radius);
+        text-decoration: none;
+        color: var(--dark);
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .quick-action:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .quick-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+</body>
+</html>
