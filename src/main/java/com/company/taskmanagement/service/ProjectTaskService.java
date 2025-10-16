@@ -21,6 +21,8 @@ public class ProjectTaskService {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private TelegramGroupNotificationService telegramNotificationService;
 
     /**
      * Получить все задачи
@@ -56,18 +58,28 @@ public class ProjectTaskService {
     /**
      * Создать новую задачу с валидацией
      */
+    /**
+     * Создать задачу с уведомлением в группу
+     */
     public ProjectTask createTask(ProjectTask task) {
         validateTask(task);
 
-        // Устанавливаем дату создания если не установлена
         if (task.getCreatedAt() == null) {
             task.setCreatedAt(LocalDate.now());
         }
-
-        // Устанавливаем дату изменения статуса
         task.setStatusChangedDate(LocalDate.now());
 
-        return projectTaskRepository.save(task);
+        ProjectTask savedTask = projectTaskRepository.save(task);
+
+        // Отправляем уведомление в Telegram группу
+        try {
+            telegramNotificationService.sendTaskNotification(savedTask);
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка отправки уведомления: " + e.getMessage());
+            // Не прерываем выполнение из-за ошибки уведомления
+        }
+
+        return savedTask;
     }
 
     /**
@@ -75,30 +87,31 @@ public class ProjectTaskService {
      */
     public ProjectTask updateTask(Long id, ProjectTask taskDetails) {
         return projectTaskRepository.findById(id).map(existingTask -> {
-            // Сохраняем старый статус для логики дат
             ProjectTask.TaskStatus oldStatus = existingTask.getStatus();
 
-            // Обновляем базовые поля
+            // Обновляем поля
             existingTask.setTitle(taskDetails.getTitle());
             existingTask.setDescription(taskDetails.getDescription());
             existingTask.setPriority(taskDetails.getPriority());
             existingTask.setDueDate(taskDetails.getDueDate());
             existingTask.setAssignees(taskDetails.getAssignees());
 
-            // Обновляем статус с логикой дат
+            // Обновляем статус
             updateTaskStatus(existingTask, taskDetails.getStatus(), oldStatus);
 
-            // Архивация
-            existingTask.setArchived(taskDetails.isArchived());
-            if (taskDetails.isArchived() && !existingTask.isArchived()) {
-                existingTask.setArchivedDate(LocalDate.now());
-            } else if (!taskDetails.isArchived() && existingTask.isArchived()) {
-                existingTask.setArchivedDate(null);
+            ProjectTask savedTask = projectTaskRepository.save(existingTask);
+
+            // Уведомление об обновлении
+            try {
+                telegramNotificationService.sendTaskUpdatedNotification(savedTask);
+            } catch (Exception e) {
+                System.err.println("❌ Ошибка отправки уведомления об обновлении: " + e.getMessage());
             }
 
-            return projectTaskRepository.save(existingTask);
+            return savedTask;
         }).orElseThrow(() -> new IllegalArgumentException("Задача с ID " + id + " не найдена"));
     }
+
 
     /**
      * Обновление статуса задачи с логикой дат
@@ -128,19 +141,25 @@ public class ProjectTaskService {
      */
     public ProjectTask completeTask(Long taskId) {
         return projectTaskRepository.findById(taskId).map(task -> {
-            // Сохраняем старый статус
             ProjectTask.TaskStatus oldStatus = task.getStatus();
 
-            // Устанавливаем новый статус
             task.setStatus(ProjectTask.TaskStatus.COMPLETED);
             task.setStatusChangedDate(LocalDate.now());
 
-            // Устанавливаем дату завершения только если задача еще не была завершена
             if (oldStatus != ProjectTask.TaskStatus.COMPLETED) {
                 task.setCompletedDate(LocalDate.now());
             }
 
-            return projectTaskRepository.save(task);
+            ProjectTask savedTask = projectTaskRepository.save(task);
+
+            // Уведомление о завершении
+            try {
+                telegramNotificationService.sendTaskCompletedNotification(savedTask);
+            } catch (Exception e) {
+                System.err.println("❌ Ошибка отправки уведомления о завершении: " + e.getMessage());
+            }
+
+            return savedTask;
         }).orElseThrow(() -> new IllegalArgumentException("Задача с ID " + taskId + " не найдена"));
     }
 
