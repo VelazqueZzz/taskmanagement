@@ -66,6 +66,8 @@ public class SecurityConfig {
                         .requestMatchers("/dashboard").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/tasks/view/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/tasks/create").hasRole("ADMIN")
+                        .requestMatchers("/chat").hasAnyRole("USER", "ADMIN") // Добавили чат
+                        .requestMatchers("/api/chat/**").hasAnyRole("USER", "ADMIN") // API чата
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
@@ -75,7 +77,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .logout(logout -> logout
-                        .logoutUrl("/logout")  // Явно указываем URL для logout
+                        .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout=true")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")

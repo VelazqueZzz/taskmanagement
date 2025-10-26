@@ -1,13 +1,15 @@
-// Простой Service Worker
+// Отключаем Service Worker
 self.addEventListener('install', function(event) {
-    console.log('Service Worker installed');
+    console.log('Service Worker disabled');
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', function(event) {
-    console.log('Service Worker activated');
+    console.log('Service Worker deactivated');
 });
 
+// Пропускаем все запросы без обработки
 self.addEventListener('fetch', function(event) {
-    // Просто пропускаем все запросы
-    event.respondWith(fetch(event.request));
+    // Не перехватываем запросы
+    return;
 });

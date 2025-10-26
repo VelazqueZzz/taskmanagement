@@ -26,6 +26,22 @@ public class AuthController {
     @Autowired
     private ArchiveService archiveService;
 
+    @GetMapping("/chat")
+    public String chatPage(Model model, Authentication authentication) {
+        try {
+            // Текущий пользователь
+            String username = authentication.getName();
+            User currentUser = userService.getUserByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+            model.addAttribute("currentUser", currentUser);
+            return "chat";
+
+        } catch (Exception e) {
+            model.addAttribute("error", "Ошибка загрузки чата: " + e.getMessage());
+            return "error";
+        }
+    }
     @GetMapping("/")
     public String home() {
         return "redirect:/dashboard";

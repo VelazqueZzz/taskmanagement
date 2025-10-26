@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#6366f1">
-    <title>Командный чат - TaskFlow Pro</title>
+    <title>Командный чат - TeamBalancer</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" th:href="@{/favicon.ico}">
@@ -143,6 +143,7 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .chat-header {
@@ -271,6 +272,7 @@
 
         .message-text {
             line-height: 1.4;
+            word-wrap: break-word;
         }
 
         .message-system {
@@ -282,6 +284,135 @@
             text-align: center;
         }
 
+        .message-error {
+            align-self: center;
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 0.9rem;
+            max-width: 50%;
+            text-align: center;
+        }
+
+        /* File Message */
+        .file-message {
+            border: 2px dashed #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .file-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px;
+        }
+
+        .file-icon {
+            font-size: 2rem;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .file-meta {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .download-btn {
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.8rem;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background: #4f46e5;
+        }
+
+        /* Reactions */
+        .reactions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-top: 8px;
+        }
+
+        .reaction {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 2px 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .message.other .reaction {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .reaction:hover {
+            transform: scale(1.1);
+        }
+
+        .reaction.active {
+            background: #6366f1;
+            color: white;
+        }
+
+        /* Emoji Picker */
+        .emoji-picker-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .emoji-picker {
+            position: absolute;
+            bottom: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+
+        .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .emoji-btn:hover {
+            background: #f1f5f9;
+        }
+
         /* Input Area */
         .input-area {
             padding: 20px;
@@ -289,10 +420,18 @@
             display: flex;
             gap: 12px;
             align-items: flex-end;
+            position: relative;
+        }
+
+        .input-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
         }
 
         .message-input {
-            flex: 1;
             padding: 12px 16px;
             border: 2px solid #e2e8f0;
             border-radius: 12px;
@@ -306,6 +445,26 @@
         .message-input:focus {
             outline: none;
             border-color: #6366f1;
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .file-upload-btn, .emoji-picker-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            transition: background 0.2s ease;
+        }
+
+        .file-upload-btn:hover, .emoji-picker-btn:hover {
+            background: #f1f5f9;
         }
 
         .send-btn {
@@ -331,6 +490,39 @@
             background: #9ca3af;
             cursor: not-allowed;
             transform: none;
+        }
+
+        /* File Upload */
+        .file-upload {
+            display: none;
+        }
+
+        .file-preview {
+            background: #f8fafc;
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .file-preview-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+        }
+
+        .remove-file {
+            background: none;
+            border: none;
+            color: #dc2626;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px;
         }
 
         /* Typing Indicator */
@@ -377,6 +569,10 @@
             .btn {
                 width: 100%;
                 justify-content: center;
+            }
+
+            .emoji-picker {
+                right: -50px;
             }
         }
 
@@ -444,12 +640,31 @@
         </div>
 
         <div class="input-area">
-            <textarea
-                    class="message-input"
-                    id="messageInput"
-                    placeholder="Напишите сообщение..."
-                    rows="1"
-            ></textarea>
+            <div class="input-container">
+                <textarea
+                        class="message-input"
+                        id="messageInput"
+                        placeholder="Напишите сообщение..."
+                        rows="1"
+                ></textarea>
+
+                <div class="file-preview" id="filePreview"></div>
+
+                <div class="input-actions">
+                    <input type="file" id="fileUpload" class="file-upload" accept="*/*">
+                    <button type="button" class="file-upload-btn" onclick="document.getElementById('fileUpload').click()">
+                        📎
+                    </button>
+
+                    <div class="emoji-picker-container">
+                        <button type="button" class="emoji-picker-btn" onclick="toggleEmojiPicker()">😊</button>
+                        <div class="emoji-picker" id="emojiPicker">
+                            <!-- Emojis will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <button class="send-btn" id="sendBtn">
                 📤 Отправить
             </button>
@@ -465,18 +680,22 @@
         constructor() {
             this.messages = [];
             this.currentUser = this.getCurrentUser();
-            this.typingTimer = null;
-            this.isOnline = true;
             this.lastMessageId = 0;
+            this.availableEmojis = new Set();
+            this.isOnline = true;
+            this.typingTimer = null;
+            this.fileToUpload = null;
             this.init();
         }
 
         init() {
             console.log('TeamChat initialized');
+            this.loadAvailableEmojis();
             this.loadMessages();
             this.loadUsers();
             this.setupEventListeners();
             this.markAsOnline();
+            this.startAutoRefresh();
         }
 
         getCurrentUser() {
@@ -486,11 +705,57 @@
             };
         }
 
+        async loadAvailableEmojis() {
+            try {
+                const response = await fetch('/api/chat/emojis');
+                if (response.ok) {
+                    const emojis = await response.json();
+                    this.availableEmojis = new Set(emojis);
+                    this.renderEmojiPicker();
+                }
+            } catch (error) {
+                console.error('Error loading emojis:', error);
+                // Default emojis
+                this.availableEmojis = new Set(['👍', '👎', '❤️', '🔥', '🥳', '👀', '🚀', '🎉']);
+                this.renderEmojiPicker();
+            }
+        }
+
+        renderEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            if (!picker) return;
+
+            picker.innerHTML = '';
+            this.availableEmojis.forEach(emoji => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'emoji-btn';
+                btn.textContent = emoji;
+                btn.onclick = () => this.addEmojiToInput(emoji);
+                picker.appendChild(btn);
+            });
+        }
+
+        addEmojiToInput(emoji) {
+            const input = document.getElementById('messageInput');
+            const cursorPos = input.selectionStart;
+            const textBefore = input.value.substring(0, cursorPos);
+            const textAfter = input.value.substring(cursorPos);
+
+            input.value = textBefore + emoji + textAfter;
+            input.focus();
+            input.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+
+            this.toggleEmojiPicker(false);
+            this.adjustTextareaHeight(input);
+        }
+
         setupEventListeners() {
             console.log('Setting up event listeners');
 
             const sendBtn = document.getElementById('sendBtn');
             const messageInput = document.getElementById('messageInput');
+            const fileUpload = document.getElementById('fileUpload');
 
             if (sendBtn) {
                 sendBtn.addEventListener('click', () => this.sendMessage());
@@ -498,64 +763,95 @@
 
             if (messageInput) {
                 messageInput.addEventListener('keydown', (e) => this.handleKeydown(e));
-                messageInput.addEventListener('input', () => this.adjustTextareaHeight(messageInput));
+                messageInput.addEventListener('input', () => {
+                    this.adjustTextareaHeight(messageInput);
+                    this.showTypingIndicator();
+                });
             }
-        }
 
-        async loadMessages() {
-            try {
-                console.log('Loading messages...');
-                const response = await fetch('/api/chat/messages?limit=100');
-                if (response.ok) {
-                    const newMessages = await response.json();
+            if (fileUpload) {
+                fileUpload.addEventListener('change', (e) => this.handleFileSelect(e));
+            }
 
-                    if (this.hasNewMessages(newMessages)) {
-                        this.messages = newMessages;
-                        this.renderMessages();
-                        console.log('Messages updated:', this.messages.length);
-                    } else {
-                        console.log('No new messages, skipping render');
-                    }
-                } else {
-                    console.error('Ошибка загрузки сообщений:', response.status);
-                    this.loadFromLocalStorage();
+            // Close emoji picker when clicking outside
+            document.addEventListener('click', (e) => {
+                const emojiPicker = document.getElementById('emojiPicker');
+                const emojiBtn = document.querySelector('.emoji-picker-btn');
+
+                if (emojiPicker && emojiBtn &&
+                    !emojiPicker.contains(e.target) &&
+                    !emojiBtn.contains(e.target)) {
+                    this.toggleEmojiPicker(false);
                 }
-            } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
-                this.loadFromLocalStorage();
-            }
+            });
         }
 
-        hasNewMessages(newMessages) {
-            if (this.messages.length !== newMessages.length) {
-                return true;
-            }
+        toggleEmojiPicker(show = null) {
+            const picker = document.getElementById('emojiPicker');
+            if (!picker) return;
 
-            if (this.messages.length > 0 && newMessages.length > 0) {
-                const lastOldMessage = this.messages[this.messages.length - 1];
-                const lastNewMessage = newMessages[newMessages.length - 1];
-
-                return lastOldMessage.id !== lastNewMessage.id ||
-                    lastOldMessage.timestamp !== lastNewMessage.timestamp;
-            }
-
-            return true;
+            const shouldShow = show !== null ? show : picker.style.display !== 'block';
+            picker.style.display = shouldShow ? 'block' : 'none';
         }
 
-        loadFromLocalStorage() {
-            const saved = localStorage.getItem('teamChatMessages');
-            if (saved) {
-                this.messages = JSON.parse(saved);
-                this.renderMessages();
+        handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            // Validate file size
+            if (file.size > 10 * 1024 * 1024) {
+                alert('Размер файла превышает 10MB');
+                event.target.value = '';
+                return;
             }
+
+            this.fileToUpload = file;
+            this.showFilePreview(file);
         }
 
-        async loadUsers() {
-            console.log('Loading users...');
-            this.updateOnlineCount();
+        showFilePreview(file) {
+            const preview = document.getElementById('filePreview');
+            if (!preview) return;
+
+            const fileSize = this.formatFileSize(file.size);
+
+            preview.innerHTML = `
+                <div class="file-preview-item">
+                    <span>📎 ${file.name} (${fileSize})</span>
+                    <button type="button" class="remove-file" onclick="chat.removeFilePreview()">×</button>
+                </div>
+            `;
+            preview.style.display = 'block';
+        }
+
+        removeFilePreview() {
+            const preview = document.getElementById('filePreview');
+            const fileUpload = document.getElementById('fileUpload');
+
+            if (preview) {
+                preview.style.display = 'none';
+                preview.innerHTML = '';
+            }
+
+            if (fileUpload) {
+                fileUpload.value = '';
+            }
+
+            this.fileToUpload = null;
+        }
+
+        formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            else if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            else return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
         }
 
         async sendMessage() {
+            if (this.fileToUpload) {
+                await this.uploadFile();
+                return;
+            }
+
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
 
@@ -564,6 +860,10 @@
                 return;
             }
 
+            await this.sendTextMessage(text);
+        }
+
+        async sendTextMessage(text) {
             console.log('Sending message:', text);
 
             const sendBtn = document.getElementById('sendBtn');
@@ -594,23 +894,70 @@
                 if (response.ok) {
                     const newMessage = await response.json();
                     console.log('Message sent successfully:', newMessage);
-
                     this.addSingleMessage(newMessage);
+
+                    const input = document.getElementById('messageInput');
                     input.value = '';
                     this.adjustTextareaHeight(input);
                 } else {
                     console.error('Server error:', response.status);
-                    this.saveMessageLocally(text);
+                    const errorText = await response.text();
+                    this.showError('Ошибка отправки сообщения: ' + errorText);
                 }
             } catch (error) {
                 console.error('Network error:', error);
-                this.saveMessageLocally(text);
+                this.showError('Ошибка сети: ' + error.message);
             } finally {
                 sendBtn.disabled = false;
-                sendBtn.innerHTML = originalText;
+                sendBtn.innerHTML = '📤 Отправить';
             }
         }
 
+        async uploadFile() {
+            if (!this.fileToUpload) return;
+
+            console.log('Uploading file:', this.fileToUpload.name);
+
+            const sendBtn = document.getElementById('sendBtn');
+            const originalText = sendBtn.innerHTML;
+
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '📤 Загрузка...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', this.fileToUpload);
+
+                const csrfToken = document.getElementById('csrfToken')?.value;
+                if (csrfToken) {
+                    formData.append('_csrf', csrfToken);
+                }
+
+                const response = await fetch('/api/chat/upload-file', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const fileMessage = await response.json();
+                    console.log('File uploaded successfully:', fileMessage);
+                    this.addSingleMessage(fileMessage);
+                    this.removeFilePreview();
+                } else {
+                    const errorText = await response.text();
+                    console.error('File upload error:', response.status, errorText);
+                    this.showError('Ошибка загрузки файла: ' + errorText);
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                this.showError('Ошибка загрузки файла: ' + error.message);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.innerHTML = '📤 Отправить';
+            }
+        }
+
+        // ДОБАВЛЕННЫЙ МЕТОД - исправление ошибки
         addSingleMessage(message) {
             const messageExists = this.messages.some(m => m.id === message.id);
 
@@ -619,33 +966,6 @@
                 this.saveToLocalStorage();
                 this.appendMessageToChat(message);
             }
-        }
-
-        appendMessageToChat(message) {
-            const container = document.getElementById('messagesContainer');
-            if (!container) return;
-
-            const messageElement = this.createMessageElement(message);
-            container.appendChild(messageElement);
-            this.scrollToBottom();
-        }
-
-        saveMessageLocally(text) {
-            console.log('Saving message locally:', text);
-
-            const message = {
-                id: Date.now(),
-                sender: this.currentUser.username,
-                text: text,
-                timestamp: new Date().toISOString(),
-                type: 'MESSAGE'
-            };
-
-            this.addSingleMessage(message);
-
-            const input = document.getElementById('messageInput');
-            input.value = '';
-            this.adjustTextareaHeight(input);
         }
 
         handleKeydown(event) {
@@ -664,51 +984,96 @@
             this.showTypingIndicator();
         }
 
-        renderMessages() {
-            const container = document.getElementById('messagesContainer');
-            if (!container) {
-                console.error('Messages container not found');
-                return;
-            }
+        async loadMessages() {
+            try {
+                console.log('Loading messages after ID:', this.lastMessageId);
+                const url = this.lastMessageId > 0
+                    ? `/api/chat/messages?afterId=${this.lastMessageId}`
+                    : '/api/chat/messages?limit=100';
 
-            const scrollPosition = container.scrollTop;
-            const isScrolledToBottom = this.isScrolledToBottom();
+                const response = await fetch(url);
+                if (response.ok) {
+                    const newMessages = await response.json();
 
-            container.innerHTML = '';
+                    if (newMessages.length > 0) {
+                        // Add only new messages
+                        newMessages.forEach(msg => {
+                            if (!this.messages.some(m => m.id === msg.id)) {
+                                this.messages.push(msg);
+                                this.appendMessageToChat(msg);
 
-            if (this.messages.length === 0) {
-                container.innerHTML = '<div class="message system">💬 Добро пожаловать в командный чат!</div>';
-                return;
-            }
+                                // Update last message ID
+                                if (msg.id > this.lastMessageId) {
+                                    this.lastMessageId = msg.id;
+                                }
+                            }
+                        });
 
-            this.messages.forEach(msg => {
-                const messageElement = this.createMessageElement(msg);
-                container.appendChild(messageElement);
-            });
-
-            if (isScrolledToBottom) {
-                this.scrollToBottom();
-            } else {
-                container.scrollTop = scrollPosition;
+                        console.log('Loaded', newMessages.length, 'new messages. Total:', this.messages.length);
+                    }
+                } else {
+                    console.error('Ошибка загрузки сообщений:', response.status);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сообщений:', error);
             }
         }
 
-        isScrolledToBottom() {
+        appendMessageToChat(message) {
             const container = document.getElementById('messagesContainer');
-            if (!container) return true;
+            if (!container) return;
 
-            return container.scrollHeight - container.clientHeight <= container.scrollTop + 10;
+            const messageElement = this.createMessageElement(message);
+
+            // Find if message already exists
+            const existingMessage = container.querySelector(`[data-message-id="${message.id}"]`);
+            if (existingMessage) {
+                // Update existing message (for reactions)
+                existingMessage.replaceWith(messageElement);
+            } else {
+                // Add new message
+                container.appendChild(messageElement);
+            }
+
+            this.scrollToBottom();
         }
 
         createMessageElement(message) {
             const div = document.createElement('div');
+            div.className = 'message';
+            div.setAttribute('data-message-id', message.id);
+
             const isOwn = message.sender === this.currentUser.username;
-            const isSystem = message.type === 'SYSTEM' || message.type === 'ERROR';
+            const isSystem = message.type === 'SYSTEM';
+            const isError = message.type === 'ERROR';
+            const isFile = message.type === 'FILE';
 
             if (isSystem) {
                 div.className = 'message system';
                 div.innerHTML = `
                     <div class="message-text">${this.escapeHtml(message.text)}</div>
+                `;
+            } else if (isError) {
+                div.className = 'message error';
+                div.innerHTML = `
+                    <div class="message-text">${this.escapeHtml(message.text)}</div>
+                `;
+            } else if (isFile) {
+                div.className = `message ${isOwn ? 'own' : 'other'} file-message`;
+                div.innerHTML = `
+                    <div class="message-header">
+                        <span class="message-sender">${message.sender}</span>
+                        <span class="message-time">${this.formatTime(message.timestamp)}</span>
+                    </div>
+                    <div class="file-content">
+                        <div class="file-icon">${message.fileIcon || '📎'}</div>
+                        <div class="file-info">
+                            <div class="file-name">${this.escapeHtml(message.fileName)}</div>
+                            <div class="file-meta">${message.formattedFileSize}</div>
+                        </div>
+                        <a href="${message.fileUrl}" class="download-btn" download="${message.fileName}">Скачать</a>
+                    </div>
+                    ${this.createReactionsHTML(message)}
                 `;
             } else {
                 div.className = `message ${isOwn ? 'own' : 'other'}`;
@@ -718,10 +1083,79 @@
                         <span class="message-time">${this.formatTime(message.timestamp)}</span>
                     </div>
                     <div class="message-text">${this.escapeHtml(message.text)}</div>
+                    ${this.createReactionsHTML(message)}
                 `;
             }
 
             return div;
+        }
+
+        createReactionsHTML(message) {
+            if (!message.reactions || message.reactions.size === 0) {
+                return '';
+            }
+
+            const reactions = Array.from(message.reactions);
+            return `
+                <div class="reactions">
+                    ${reactions.map(emoji => `
+                        <span class="reaction" onclick="chat.toggleReaction(${message.id}, '${emoji}')">
+                            ${emoji}
+                        </span>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        async toggleReaction(messageId, emoji) {
+            try {
+                const csrfToken = document.getElementById('csrfToken')?.value;
+                const message = this.messages.find(m => m.id === messageId);
+
+                if (message && message.reactions && message.reactions.has(emoji)) {
+                    // Remove reaction
+                    const response = await fetch(`/api/chat/react/${messageId}?emoji=${encodeURIComponent(emoji)}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: csrfToken ? `_csrf=${csrfToken}` : ''
+                    });
+
+                    if (response.ok) {
+                        message.reactions.delete(emoji);
+                        this.updateMessageElement(message);
+                    }
+                } else {
+                    // Add reaction
+                    const response = await fetch(`/api/chat/react/${messageId}?emoji=${encodeURIComponent(emoji)}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: csrfToken ? `_csrf=${csrfToken}` : ''
+                    });
+
+                    if (response.ok) {
+                        if (!message.reactions) message.reactions = new Set();
+                        message.reactions.add(emoji);
+                        this.updateMessageElement(message);
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling reaction:', error);
+            }
+        }
+
+        updateMessageElement(message) {
+            const container = document.getElementById('messagesContainer');
+            if (!container) return;
+
+            const existingMessage = container.querySelector(`[data-message-id="${message.id}"]`);
+            if (existingMessage) {
+                const newMessageElement = this.createMessageElement(message);
+                existingMessage.replaceWith(newMessageElement);
+            }
         }
 
         showTypingIndicator() {
@@ -748,6 +1182,20 @@
             }
         }
 
+        // ДОБАВЛЕННЫЙ МЕТОД - для сохранения в localStorage
+        saveToLocalStorage() {
+            try {
+                localStorage.setItem('teamChatMessages', JSON.stringify(this.messages));
+            } catch (e) {
+                console.error('Error saving to localStorage:', e);
+            }
+        }
+
+        async loadUsers() {
+            console.log('Loading users...');
+            this.updateOnlineCount();
+        }
+
         updateOnlineCount() {
             const onlineCount = document.querySelectorAll('.user-item').length;
             const onlineCountElement = document.getElementById('onlineCount');
@@ -760,12 +1208,15 @@
             this.isOnline = true;
         }
 
-        saveToLocalStorage() {
-            try {
-                localStorage.setItem('teamChatMessages', JSON.stringify(this.messages));
-            } catch (e) {
-                console.error('Error saving to localStorage:', e);
-            }
+        showError(message) {
+            const errorMessage = {
+                id: Date.now(),
+                sender: 'System',
+                text: message,
+                timestamp: new Date().toISOString(),
+                type: 'ERROR'
+            };
+            this.appendMessageToChat(errorMessage);
         }
 
         formatTime(timestamp) {
@@ -790,23 +1241,20 @@
         startAutoRefresh() {
             setInterval(() => {
                 this.loadMessages();
-            }, 3000);
+            }, 2000); // Refresh every 2 seconds
+        }
+    }
+
+    // Global functions for HTML onclick handlers
+    function toggleEmojiPicker() {
+        if (window.chat) {
+            window.chat.toggleEmojiPicker();
         }
     }
 
     function sendMessage() {
-        if (window.chat && typeof window.chat.sendMessage === 'function') {
+        if (window.chat) {
             window.chat.sendMessage();
-        } else {
-            console.error('Chat not initialized');
-        }
-    }
-
-    function handleKeydown(event) {
-        if (window.chat && typeof window.chat.handleKeydown === 'function') {
-            window.chat.handleKeydown(event);
-        } else {
-            console.error('Chat not initialized');
         }
     }
 
@@ -822,9 +1270,6 @@
                 messageInput.focus();
                 console.log('Message input focused');
             }
-
-            window.chat.startAutoRefresh();
-            console.log('Auto-refresh started');
 
         } catch (error) {
             console.error('Error initializing chat:', error);

@@ -22,7 +22,8 @@ function loadResource(url, type) {
     });
 }
 
-// Безопасная регистрация Service Worker
+// ЗАКОММЕНТИРОВАННАЯ регистрация Service Worker
+/*
 function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
@@ -31,15 +32,16 @@ function registerServiceWorker() {
             })
             .catch(error => {
                 console.log('SW registration failed:', error);
-                // Скрываем ошибку от пользователя
             });
     }
 }
+*/
 
 // Инициализация при загрузке
 document.addEventListener('DOMContentLoaded', function() {
     try {
-        registerServiceWorker();
+        // НЕ регистрируем Service Worker
+        // registerServiceWorker();
 
         // Основная логика приложения
         const forms = document.querySelectorAll('form');

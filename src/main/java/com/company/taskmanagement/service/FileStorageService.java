@@ -30,7 +30,7 @@ public class FileStorageService {
     private ProjectTaskRepository projectTaskRepository;
 
     /**
-     * Сохранить файл для задачи - ЕДИНСТВЕННЫЙ МЕТОД ДЛЯ СОХРАНЕНИЯ ФАЙЛОВ
+     * Сохранить файл для задачи
      */
     public FileAttachment storeFileForTask(MultipartFile file, Long taskId) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -73,13 +73,6 @@ public class FileStorageService {
         return fileAttachmentRepository.save(attachment);
     }
 
-    /**
-     * УДАЛЯЕМ старый метод storeFile чтобы избежать путаницы
-     */
-    // public FileAttachment storeFile(MultipartFile file, ProjectTask task) throws IOException {
-    //     // Этот метод больше не используется
-    // }
-
     public List<FileAttachment> getTaskFiles(Long taskId) {
         return fileAttachmentRepository.findByTaskIdOrderByUploadedAtDesc(taskId);
     }
@@ -93,20 +86,55 @@ public class FileStorageService {
         FileAttachment attachment = getFile(fileId);
 
         // Удаление физического файла
-        Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+        try {
+            Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+            System.out.println("✅ Физический файл удален: " + attachment.getFilePath());
+        } catch (IOException e) {
+            System.err.println("❌ Ошибка удаления физического файла: " + e.getMessage());
+            // Продолжаем удаление записи из БД даже если файл не найден
+        }
 
         // Удаление записи из БД
         fileAttachmentRepository.delete(attachment);
+        System.out.println("✅ Запись файла удалена из БД: " + fileId);
     }
 
     public void deleteAllTaskFiles(Long taskId) throws IOException {
         List<FileAttachment> attachments = fileAttachmentRepository.findByTaskIdOrderByUploadedAtDesc(taskId);
 
-        for (FileAttachment attachment : attachments) {
-            Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+        if (attachments.isEmpty()) {
+            System.out.println("✅ Для задачи " + taskId + " нет файлов для удаления");
+            return;
         }
 
-        fileAttachmentRepository.deleteByTaskId(taskId);
+        System.out.println("🗑️ Начинаем удаление " + attachments.size() + " файлов для задачи " + taskId);
+
+        int deletedCount = 0;
+        int errorCount = 0;
+
+        for (FileAttachment attachment : attachments) {
+            try {
+                // Удаление физического файла
+                Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+                System.out.println("✅ Удален файл: " + attachment.getOriginalFilename());
+                deletedCount++;
+            } catch (IOException e) {
+                System.err.println("❌ Ошибка удаления файла " + attachment.getOriginalFilename() + ": " + e.getMessage());
+                errorCount++;
+            }
+        }
+
+        // Удаление записей из БД
+        try {
+            fileAttachmentRepository.deleteByTaskId(taskId);
+            System.out.println("✅ Удалены записи файлов из БД для задачи " + taskId);
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка удаления записей файлов из БД: " + e.getMessage());
+            errorCount++;
+        }
+
+        System.out.println("📊 Итог удаления файлов для задачи " + taskId +
+                ": успешно " + deletedCount + ", ошибок " + errorCount);
     }
 
     private boolean isAllowedFileType(String contentType) {

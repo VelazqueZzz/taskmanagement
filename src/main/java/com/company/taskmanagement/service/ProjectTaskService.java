@@ -21,8 +21,12 @@ public class ProjectTaskService {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private TelegramGroupNotificationService telegramNotificationService;
+
+    @Autowired
+    private FileStorageService fileStorageService;
 
     /**
      * Получить все задачи
@@ -56,10 +60,7 @@ public class ProjectTaskService {
     }
 
     /**
-     * Создать новую задачу с валидацией
-     */
-    /**
-     * Создать задачу с уведомлением в группу
+     * Создать новую задачу с уведомлением
      */
     public ProjectTask createTask(ProjectTask task) {
         validateTask(task);
@@ -76,7 +77,6 @@ public class ProjectTaskService {
             telegramNotificationService.sendTaskNotification(savedTask);
         } catch (Exception e) {
             System.err.println("❌ Ошибка отправки уведомления: " + e.getMessage());
-            // Не прерываем выполнение из-за ошибки уведомления
         }
 
         return savedTask;
@@ -111,7 +111,6 @@ public class ProjectTaskService {
             return savedTask;
         }).orElseThrow(() -> new IllegalArgumentException("Задача с ID " + id + " не найдена"));
     }
-
 
     /**
      * Обновление статуса задачи с логикой дат
@@ -164,15 +163,55 @@ public class ProjectTaskService {
     }
 
     /**
-     * Удалить задачу с проверкой существования
+     * Удалить задачу с проверкой существования и очисткой файлов
      */
     @Transactional
     public boolean deleteTask(Long id) {
-        if (!projectTaskRepository.existsById(id)) {
+        try {
+            Optional<ProjectTask> taskOptional = projectTaskRepository.findById(id);
+            if (taskOptional.isEmpty()) {
+                System.err.println("Задача с ID " + id + " не найдена");
+                return false;
+            }
+
+            ProjectTask task = taskOptional.get();
+            System.out.println("Начинаем удаление задачи ID: " + id);
+
+            // 1. Сначала очищаем связи многие-ко-многим
+            if (task.getAssignees() != null) {
+                System.out.println("Очищаем связи с исполнителями...");
+                task.getAssignees().clear();
+                projectTaskRepository.save(task); // Сохраняем без исполнителей
+            }
+
+            // 2. Удаляем файлы через сервис
+            try {
+                System.out.println("Удаляем файлы задачи...");
+                fileStorageService.deleteAllTaskFiles(id);
+            } catch (Exception e) {
+                System.err.println("Ошибка при удалении файлов задачи " + id + ": " + e.getMessage());
+                // Продолжаем удаление даже если файлы не удалились
+            }
+
+            // 3. Удаляем саму задачу
+            System.out.println("Удаляем задачу из базы данных...");
+            projectTaskRepository.delete(task);
+
+            // 4. Проверяем что задача удалена
+            boolean stillExists = projectTaskRepository.existsById(id);
+            if (stillExists) {
+                System.err.println("Задача " + id + " все еще существует после удаления!");
+                return false;
+            }
+
+            System.out.println("✅ Задача " + id + " успешно удалена");
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Ошибка при удалении задачи " + id + ": " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
-        projectTaskRepository.deleteById(id);
-        return true;
     }
 
     /**

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ public interface FileAttachmentRepository extends JpaRepository<FileAttachment, 
     List<FileAttachment> findByTaskId(@Param("taskId") Long taskId);
 
     @Modifying
+    @Transactional
     @Query("DELETE FROM FileAttachment f WHERE f.task.id = :taskId")
     void deleteByTaskId(@Param("taskId") Long taskId);
 
