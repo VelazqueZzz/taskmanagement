@@ -1,6 +1,6 @@
 Не большой проект распределения задач в отделе или компании. 
 
-    Стэк JavaScrypt + HTML + CSS + SpringBoot + MySql
+    Стэк JavaScript + HTML + CSS + SpringBoot + MySql
 
 незабудьте в application.properties выставить свои настройки
 
